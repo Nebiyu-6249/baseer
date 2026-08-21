@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+out/
+dist/
+*.vsix
+
+# Secrets — never commit. See docs/THREAT_MODEL.md T5.2
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+.baseer/
+
+# Academic PDFs (copyright; fetched locally, not redistributed)
+docs/papers/
+
+# Editor / OS
+.vscode-test/
+.DS_Store
+Thumbs.db
+
+# Logs / coverage
+*.log
+coverage/
+.nyc_output/
