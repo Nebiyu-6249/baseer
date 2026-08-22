@@ -1,18 +1,23 @@
 # Baseer threat model
 
-Status: **DRAFT — awaiting approval.** Per the bootstrap protocol, no
-implementation proceeds until this is signed off.
+Status: **APPROVED — v1.0.** Signed off by Nebiyu Gemedu 2026-08-22 with
+four amendments, applied throughout this document (endpoint allow-list,
+no telemetry, log rotation, mandatory first-run consent).
 
-Version 0.1 · 2026-08-21 · Scope: MVP (VS Code extension only, no backend)
+Version 1.0 · approved 2026-08-22 (draft 0.1: 2026-08-21) ·
+Scope: MVP (VS Code extension only, no backend)
+
+**Provider:** OpenAI (swapped from Anthropic Claude on 2026-08-22; the
+`LlmClient` interface is unchanged and remains provider-agnostic).
 
 ---
 
 ## 1. What Baseer is, in security terms
 
-A VS Code extension running in the extension host (Node 20), in-process with
+A VS Code extension running in the extension host, in-process with
 every other extension in that window. It reads the user's source code, parses
 it locally with tree-sitter WASM, sends selected fragments over HTTPS to the
-Anthropic API using a key the user supplies, and renders the response as
+OpenAI API using a key the user supplies, and renders the response as
 text intended to be spoken by the user's own screen reader.
 
 **The defining risk of this system:** its output is consumed by a user who
@@ -29,13 +34,52 @@ as a quality issue.
 
 | # | Asset | Sensitivity | Where it lives |
 |---|---|---|---|
-| A1 | User's Anthropic API key | **Critical** — bearer credential, billable | OS keychain via `SecretStorage` |
-| A2 | User's source code | **High** — may be proprietary or client-confidential | User's disk; fragments in memory; fragments transit to Anthropic |
+| A1 | User's OpenAI API key | **Critical** — bearer credential, billable | OS keychain via `SecretStorage` |
+| A2 | User's source code | **High** — may be proprietary or client-confidential | User's disk; fragments in memory; fragments transit to OpenAI |
 | A3 | LLM responses | **High integrity, medium confidentiality** — this is what the user "sees" | Memory, transiently rendered |
 | A4 | TTS provider key (ElevenLabs/Cartesia) | **Critical**, only if user opts into in-extension TTS | `SecretStorage`; absent by default |
 | A5 | Baseer settings + usage counters | Low | `globalState` / `workspaceState` |
 | A6 | Security log | Low-medium (metadata only; must contain no code or secrets) | `~/.baseer/security.log` |
-| A7 | Telemetry | **Opt-in only**; none collected in MVP | N/A in MVP |
+| A7 | Telemetry | **None. Not collected, not opt-in, not present.** | Nowhere — see §2.1 |
+
+### 2.1 No telemetry — SIGN-OFF 2
+
+Baseer collects **no telemetry of any kind** in MVP. Not anonymised, not
+aggregated, not opt-in. None of the following exists in the codebase or
+leaves the user's machine:
+
+- analytics or usage pings of any kind
+- crash or error reporting to any remote service
+- feature-usage counters transmitted anywhere
+- any use of `vscode.env.isTelemetryEnabled` / `TelemetryLogger`
+
+The only counters Baseer keeps (A5, budget usage) are **local and never
+transmitted**; they exist solely to enforce the user's own spend caps. The
+only outbound connection Baseer ever makes is the LLM request to
+`api.openai.com` (§4 ADV-4), and only after first-run consent (§2.2).
+
+Enforced structurally: any PR adding a network call to a host other than
+`api.openai.com` must be rejected.
+
+### 2.2 First-run consent — SIGN-OFF 4
+
+**No LLM call is dispatched before consent is stored.** This is a hard
+precondition in the dispatch path, not a UI convention.
+
+The consent flow:
+
+- is delivered through whichever surface **ADR-0001** selects, and must be
+  screen-reader friendly — it is the first thing a blind user meets;
+- states plainly that **code fragments will be sent to OpenAI**;
+- names OpenAI's applicable data-retention policy, verified against
+  OpenAI's own published terms at implementation time — **never
+  paraphrased from memory** (see §9, currently blocked);
+- requires **explicit affirmative input**. Dismissing, pressing Escape, or
+  timing out is **not** consent;
+- is stored **per-workspace** — consent for one repository is not consent
+  for another, since a user may be willing to send their own code but not
+  a client's;
+- is revocable at any time via **`baseer.revokeConsent`**.
 
 **Explicit non-asset:** there are no user accounts, passwords, sessions, or
 shared databases. Authentication *is* the user's own API key. This removes a
@@ -64,7 +108,8 @@ large class of threats (see §8).
                                         TB5  (HTTPS, public internet)
                                          │
                               ┌──────────▼───────────┐
-                              │  Anthropic API       │
+                              │  OpenAI API          │
+                              │  api.openai.com      │
                               │  (third party)       │
                               └──────────────────────┘
 ```
@@ -75,10 +120,12 @@ large class of threats (see §8).
 | **TB2** | Other extensions <-> Baseer | Extensions share a process. No isolation from a malicious peer. |
 | **TB3** | Dependencies -> Baseer | npm packages and `.wasm` grammars execute with our privileges. |
 | **TB4** | Baseer <-> OS keychain | The only place A1/A4 may be read or written. |
-| **TB5** | Baseer -> Anthropic | Code leaves the machine. Network is hostile. Third party now holds A2 fragments. |
+| **TB5** | Baseer -> OpenAI | Code leaves the machine. Network is hostile. Third party now holds A2 fragments. |
 
 ### Data flow for a typical `explainSelection`
 
+0. **Consent gate:** if no consent is stored for this workspace, run the
+   first-run consent flow (§2.2). Abort if not granted.
 1. User invokes command (explicit keystroke — never automatic).
 2. Selection read from the active editor. **[TB1 — untrusted]**
 3. Truncate to 8 KB around the cursor.
@@ -87,7 +134,7 @@ large class of threats (see §8).
    `<user_code>` with a data-not-instructions preamble.
 5. Budget check **before dispatch**. Reject if over session/day cap.
 6. Key read from `SecretStorage` for this request only. **[TB4]**
-7. HTTPS POST to Anthropic. **[TB5]**
+7. HTTPS POST to OpenAI (`api.openai.com`, allow-listed). **[TB5]**
 8. Response received. Treated as untrusted: markdown stripped, links
    escaped, tool-call attempts discarded and logged.
 9. Chunked to ≤2 sentences and rendered for the screen reader.
@@ -167,7 +214,7 @@ model-driven network access. Say so plainly in user-facing docs.
 | ID | Threat | Mitigation | Sec-req |
 |---|---|---|---|
 | T4.1 | Downgrade / plaintext transmission of A2 | Assert `https:` in the `LlmClient` **constructor** so misconfiguration fails at startup, not mid-request | 9 |
-| T4.2 | Malicious custom endpoint steals A1 + A2 | Endpoint is settings-driven and therefore attacker-influenceable if settings sync is compromised. Validate with zod; warn prominently on any non-Anthropic host; consider an allow-list | 7, 9 |
+| T4.2 | Malicious custom endpoint steals A1 + A2 | **DECIDED (SIGN-OFF 1):** no configurable endpoint exists in MVP. The `LlmClient` constructor asserts `https:` **and** that the host is exactly `api.openai.com`, rejecting anything else. No user-facing setting can override it, so a compromised settings sync cannot redirect traffic. Deferred to v2. | 7, 9 |
 | T4.3 | TLS interception via corporate proxy | Out of scope — user's own trust decision. Documented. | — |
 | T4.4 | Response tampering | TLS integrity; responses treated as untrusted regardless | 11 |
 
@@ -176,9 +223,10 @@ model-driven network access. Say so plainly in user-facing docs.
 | ID | Threat | Mitigation | Sec-req |
 |---|---|---|---|
 | T5.1 | Key extracted from disk | OS keychain only (Windows Credential Manager / macOS Keychain / libsecret). Verify on each platform. | 1, 12 |
-| T5.2 | Key committed to git | `gitleaks` pre-commit hook **and** CI job; `.gitleaks.toml` with Anthropic/OpenAI/ElevenLabs/Cartesia patterns; `.gitignore` covers `.env*`, `*.pem`, `.baseer/` | 2 |
+| T5.2 | Key committed to git | `gitleaks` pre-commit hook **and** CI job; `.gitleaks.toml` with OpenAI (`sk-`, `sk-proj-`, `org-`)/ElevenLabs/Cartesia patterns; `.gitignore` covers `.env*`, `*.pem`, `.baseer/` | 2 |
 | T5.3 | Secrets leak into logs | Logger accepts a typed event struct only — **never** free-form strings that could carry code or keys | 10 |
-| T5.4 | Code leaks via security log | Log schema forbids code fields by construction, not by convention | 10 |
+| T5.4 | Code leaks via security log | Log schema forbids code fields by construction — there is no `code_content` field to populate | 10 |
+| T5.5 | Unbounded log growth in `$HOME` | **SIGN-OFF 3:** hard 5 MB cap enforced **in the logger on write**, not at read time. At the cap, rotate to `security.log.1`; anything beyond `.1` is deleted. `baseer.purgeSecurityLog` lets the user clear history outright. | 10 |
 
 ### ADV-6 — Baseer itself, through carelessness
 
@@ -202,7 +250,7 @@ included below rather than omitted.
 | Item | Applies | How it applies to Baseer | Mitigation |
 |---|---|---|---|
 | **LLM01 Prompt Injection** | **Yes — primary** | Untrusted source code is the model's input (ADV-3) | `sanitizeUserContent()`, delimiter escaping, normalisation, capability restriction |
-| **LLM02 Sensitive Information Disclosure** | **Yes** | A2 leaves the machine; A1 is a bearer credential | `SecretStorage`; 8 KB cap; explicit user-initiated sends; code never logged |
+| **LLM02 Sensitive Information Disclosure** | **Yes** | A2 leaves the machine; A1 is a bearer credential | `SecretStorage`; 8 KB cap; explicit user-initiated sends; code never logged. **OpenAI's default data-retention policy is disclosed to the user in the first-run consent copy (§2.2)** — the user decides with that fact in hand, rather than discovering it later. |
 | **LLM03 Supply Chain** | **Yes** | npm tree + opaque `.wasm` grammars (ADV-1) | audit/snyk/Dependabot; exact pins; Microsoft-published grammars; minimal tree |
 | **LLM04 Data and Model Poisoning** | **No** | We neither train nor fine-tune | N/A — documented |
 | **LLM05 Improper Output Handling** | **Yes** | Model output is rendered to a webview and spoken | Markdown stripped; links escaped; CSP; nothing executed or written to disk |
@@ -256,7 +304,8 @@ Stated plainly so they are not mistaken for solved problems:
 3. **Supply chain cannot be proven safe.** Scanning finds known bad, not
    unknown bad.
 4. **Code leaves the machine.** Using Baseer means sending fragments to
-   Anthropic. This must be stated in the README and at first run, not buried.
+   OpenAI. Stated in the README and enforced by the mandatory first-run
+   consent gate (§2.2), not buried.
 5. **LLM output can be wrong** even with no adversary, and our user cannot
    easily check it. Mitigated by design (AST-first), not eliminated.
 
@@ -272,25 +321,38 @@ accounts, no server, and no database.
 
 ---
 
-## 9. Open questions for approval
+## 9. Resolved sign-offs and remaining blockers
 
-1. **Custom endpoint setting (T4.2)** — should Baseer allow one at all in
-   MVP? It is a genuine exfiltration vector for both A1 and A2. My
-   recommendation: **allow-list `api.anthropic.com` only in MVP**, and defer
-   provider-agnostic endpoints to v2 when the `LlmClient` abstraction has a
-   second real implementation. The interface stays provider-agnostic; the
-   *configurable endpoint* is what I would drop.
-2. **Telemetry (A7)** — confirm: none at all in MVP, not even opt-in? That is
-   the simplest defensible position for an ASSETS submission and an ethics
-   review, and I recommend it.
-3. **Security log location** — `~/.baseer/security.log` is outside the
-   workspace and survives uninstall. Confirm that is intended, and confirm
-   size cap + rotation (unbounded logs in `$HOME` are their own problem).
-4. **First-run consent** — I propose an explicit, screen-reader-friendly
-   consent step before the first LLM call, stating that code fragments will
-   be sent to Anthropic. Not in the spec; I think it is required for the
-   AURAK ethics review. Approve or reject.
+### Resolved 2026-08-22 (applied throughout this document)
 
----
+| # | Question | Decision |
+|---|---|---|
+| 1 | Custom endpoint | **Allow-list only.** `api.openai.com` is the sole permitted host, asserted in the `LlmClient` constructor. No user-facing endpoint setting in MVP. Deferred to v2. (§4 T4.2) |
+| 2 | Telemetry | **None at all** — not collected, not opt-in, not present. (§2.1) |
+| 3 | Security log | Stays at `~/.baseer/security.log`, with a 5 MB write-time cap, single-generation rotation to `.log.1`, and a `baseer.purgeSecurityLog` command. (§4 T5.5) |
+| 4 | First-run consent | **Required**, per-workspace, explicit affirmative input, revocable via `baseer.revokeConsent`, blocking on the dispatch path. (§2.2) |
 
-**Sign-off:** _pending — do not begin implementation until approved._
+### Scope consequence (flagged, not silently absorbed)
+
+These sign-offs add **three commands** beyond the eight in the MVP spec:
+`baseer.setApiKey`, `baseer.purgeSecurityLog`, `baseer.revokeConsent`.
+Eleven total. Each is small and directly required by an approved control, but
+the growth is recorded here rather than absorbed quietly.
+
+### Remaining blocker — consent copy cannot be written yet
+
+**B1. OpenAI's data-retention policy is unverifiable from this environment.**
+§2.2 requires the consent copy to name OpenAI's applicable retention policy,
+verified against OpenAI's published terms and never paraphrased from memory.
+`platform.openai.com` and `api.openai.com` are both **blocked by this
+environment's egress policy** (re-checked 2026-08-22, both fail CONNECT).
+
+Consequence: the consent flow can be built, but its retention sentence must
+be filled from a source the developer supplies, or after an egress exception
+for `platform.openai.com` / `openai.com` is granted. Until then the string
+stays a clearly-marked `TODO(B1)` that **fails a unit test if shipped
+unfilled** — so it cannot reach a release by accident.
+
+**Sign-off:** Approved v1.0 by Nebiyu Gemedu, 2026-08-22, with the four
+amendments recorded in §9. Implementation may proceed, subject to blocker B1
+for the consent copy only.

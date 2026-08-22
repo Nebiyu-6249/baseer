@@ -1,0 +1,69 @@
+# gitleaks config for Baseer
+# Threat model: docs/THREAT_MODEL.md T5.2 (key committed to git), security req 2.
+# Provider: OpenAI (Anthropic patterns removed 2026-08-22 with the provider swap).
+
+title = "Baseer secret scanning"
+
+[extend]
+useDefault = true   # keep gitleaks' built-in rules; add provider-specific ones below
+
+# --- OpenAI ---------------------------------------------------------------
+
+[[rules]]
+id = "baseer-openai-project-key"
+description = "OpenAI project API key (sk-proj-...)"
+regex = '''\bsk-proj-[A-Za-z0-9_-]{20,}\b'''
+keywords = ["sk-proj-"]
+tags = ["key", "openai", "critical"]
+
+[[rules]]
+id = "baseer-openai-secret-key"
+description = "OpenAI classic secret key (sk-...)"
+# Negative lookaheads are unsupported by Go's RE2, so sk-proj- is excluded via
+# an explicit allowlist below rather than inline in the pattern.
+regex = '''\bsk-[A-Za-z0-9]{20,}\b'''
+keywords = ["sk-"]
+tags = ["key", "openai", "critical"]
+
+  [rules.allowlist]
+  # sk-proj- keys are caught by the more specific rule above; avoid double-reporting.
+  regexes = ['''\bsk-proj-[A-Za-z0-9_-]{20,}\b''']
+
+[[rules]]
+id = "baseer-openai-org-id"
+description = "OpenAI organization id (org-...) — not a credential, but identifying"
+regex = '''\borg-[A-Za-z0-9]{20,}\b'''
+keywords = ["org-"]
+tags = ["identifier", "openai", "low"]
+
+# --- Optional TTS providers (only if the user opts into in-extension TTS) ---
+
+[[rules]]
+id = "baseer-elevenlabs-key"
+description = "ElevenLabs API key"
+regex = '''\bxi-api-key['"\s:=]{1,10}[A-Za-z0-9]{32,}\b'''
+keywords = ["xi-api-key"]
+tags = ["key", "elevenlabs"]
+
+[[rules]]
+id = "baseer-cartesia-key"
+description = "Cartesia API key"
+regex = '''\bsk_car_[A-Za-z0-9_-]{20,}\b'''
+keywords = ["sk_car_"]
+tags = ["key", "cartesia"]
+
+# --- Allowlist ------------------------------------------------------------
+
+[allowlist]
+description = "Paths and literals that legitimately contain key-shaped strings"
+paths = [
+  '''\.gitleaks\.toml$''',          # this file documents the patterns
+  '''docs/THREAT_MODEL\.md$''',     # documents key formats
+  '''docs/SECURITY\.md$''',
+  '''pnpm-lock\.yaml$''',
+]
+regexes = [
+  '''sk-XXXX+''',                   # documentation placeholders
+  '''sk-proj-XXXX+''',
+  '''<PASTE[_A-Z]*>''',
+]

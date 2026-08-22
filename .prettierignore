@@ -1,0 +1,9 @@
+# Prose and hand-formatted docs. Prettier reflows markdown tables and would
+# mangle the ASCII trust-boundary diagram in docs/THREAT_MODEL.md.
+*.md
+docs/**
+.claude/**
+# Generated
+pnpm-lock.yaml
+dist/
+out/
