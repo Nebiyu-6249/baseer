@@ -68,6 +68,17 @@ burns budget is a bug.
   isolation: wrap the identifier in U+2066 LEFT-TO-RIGHT ISOLATE … U+2069
   POP DIRECTIONAL ISOLATE. Without it the rendered order is wrong and the
   spoken order can be too.
+- **Write bidi controls as escapes (`'\u2066'`), never as literal characters
+  in source.** Literal bidi controls are a Trojan Source vector — they can
+  make source read differently to a human than it does to the compiler — and
+  `eslint-plugin-security`'s `detect-bidi-characters` rule correctly rejects
+  them. The escape produces an identical runtime string with none of the
+  risk, so this costs nothing. Do not suppress the rule; it is right.
+  Centralise the pair in one `ltr()` helper rather than scattering escapes.
+- Keep the two directions separate: **strip** bidi controls from anything
+  sent to the LLM (they are an injection-evasion vector), and **add** them
+  only when rendering output. One shared filter for both would break one of
+  the two.
 - Do not machine-translate identifiers, keywords, or error codes. Translate
   the prose around them.
 - Arabic screen-reader support quality varies sharply by synthesiser. NVDA

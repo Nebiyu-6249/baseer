@@ -28,3 +28,6 @@ Thumbs.db
 *.log
 coverage/
 .nyc_output/
+
+# Exception: the ADR-0001 spike vsix is a deliverable to be installed for testing.
+!spikes/speech-delivery/*.vsix
