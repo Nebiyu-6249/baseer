@@ -111,7 +111,7 @@ l10n.bundle;  // loaded bundle or undefined
 
 `ExtensionContext.secrets: SecretStorage` — `get`/`store`/`delete`, all async,
 backed by the OS keychain (Windows Credential Manager, macOS Keychain,
-libsecret on Linux). This is the only sanctioned place for the Claude API key.
+libsecret on Linux). This is the only sanctioned place for the OpenAI API key.
 Never `globalState`, never `settings.json`, never `.env`.
 
 ## Activation
@@ -126,5 +126,12 @@ the AST layer.
 - `extensionUri` (not `__dirname`) to locate bundled assets such as `.wasm`
   grammars; `__dirname` breaks in web/remote hosts.
 - esbuild must mark `vscode` as **external** — it is injected by the host.
-- Extension host is Node 20 for VS Code 1.9x. Do not assume Node 22 features
-  even if the dev container has Node 22.
+- **Extension host Node version — verify, do not assume.** An earlier note
+  here said "Node 20 for VS Code 1.9x"; that is stale. VS Code `main` is
+  1.135.0, shipping Electron 42.8.1 and built with Node 24.18.0, so the host
+  is well above Node 20. The exact bundled Node version was **not** verified
+  (the `electron/releases` lite.json only covers up to Electron 22). This
+  matters because `openai@7.x` declares `engines: node >=22.0.0`
+  (`6.49.0` is the last release without that constraint). Confirm empirically
+  with `process.versions.node` in the Extension Development Host before
+  finalising the `openai` pin and the `engines.vscode` floor.
