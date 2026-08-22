@@ -1,0 +1,8 @@
+src/**
+node_modules/**
+tsconfig.json
+esbuild.config.mjs
+pnpm-lock.yaml
+*.vsix
+**/*.map
+**/*.ts
