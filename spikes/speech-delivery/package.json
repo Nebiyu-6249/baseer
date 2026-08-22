@@ -1,0 +1,102 @@
+{
+  "name": "baseer-speech-delivery-spike",
+  "displayName": "Baseer Speech Delivery Spike (ADR-0001)",
+  "description": "Throwaway spike comparing four ways of getting text to a screen reader. Not for release.",
+  "version": "0.0.1",
+  "publisher": "baseer-spike-local",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "baseerSpike.notification",
+        "title": "Spike A: Notification",
+        "category": "Baseer Spike"
+      },
+      {
+        "command": "baseerSpike.quickpick",
+        "title": "Spike B: QuickPick",
+        "category": "Baseer Spike"
+      },
+      {
+        "command": "baseerSpike.readonlyEditor",
+        "title": "Spike C: Read-only Editor",
+        "category": "Baseer Spike"
+      },
+      {
+        "command": "baseerSpike.webviewLiveRegion",
+        "title": "Spike D: Webview ARIA Live Region",
+        "category": "Baseer Spike"
+      },
+      {
+        "command": "baseerSpike.resetCycles",
+        "title": "Reset all fixture cycles to fixture 1",
+        "category": "Baseer Spike"
+      },
+      {
+        "command": "baseerSpike.showProtocol",
+        "title": "Show test protocol",
+        "category": "Baseer Spike"
+      },
+      {
+        "command": "baseerSpike.showLog",
+        "title": "Show announcement log",
+        "category": "Baseer Spike"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "baseerSpike.notification",
+        "key": "ctrl+alt+shift+1",
+        "mac": "cmd+alt+shift+1"
+      },
+      {
+        "command": "baseerSpike.quickpick",
+        "key": "ctrl+alt+shift+2",
+        "mac": "cmd+alt+shift+2"
+      },
+      {
+        "command": "baseerSpike.readonlyEditor",
+        "key": "ctrl+alt+shift+3",
+        "mac": "cmd+alt+shift+3"
+      },
+      {
+        "command": "baseerSpike.webviewLiveRegion",
+        "key": "ctrl+alt+shift+4",
+        "mac": "cmd+alt+shift+4"
+      },
+      {
+        "command": "baseerSpike.resetCycles",
+        "key": "ctrl+alt+shift+0",
+        "mac": "cmd+alt+shift+0"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "package": "pnpm run build && vsce package --no-dependencies --out baseer-speech-delivery-spike.vsix"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/vscode": "^1.96.0",
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.7.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@vscode/vsce-sign"
+    ]
+  }
+}
