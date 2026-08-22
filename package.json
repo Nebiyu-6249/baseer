@@ -1,0 +1,201 @@
+{
+  "name": "baseer",
+  "displayName": "Baseer",
+  "description": "Screen-reader-first code narration and AI explanation for blind and low-vision programmers, with Arabic support.",
+  "version": "0.0.1",
+  "publisher": "publisher-id-not-set",
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nebiyu-6249/baseer.git"
+  },
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other",
+    "Education"
+  ],
+  "keywords": [
+    "accessibility",
+    "screen reader",
+    "blind",
+    "nvda",
+    "arabic"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:python",
+    "onLanguage:javascript"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "baseer.summarizeFile",
+        "title": "Summarize File",
+        "category": "Baseer"
+      },
+      {
+        "command": "baseer.describeSymbolAtCursor",
+        "title": "Describe Symbol at Cursor",
+        "category": "Baseer"
+      },
+      {
+        "command": "baseer.explainSelection",
+        "title": "Explain Selection",
+        "category": "Baseer"
+      },
+      {
+        "command": "baseer.summarizeLastDiff",
+        "title": "Summarize Last Diff",
+        "category": "Baseer"
+      },
+      {
+        "command": "baseer.askAboutCode",
+        "title": "Ask About Code",
+        "category": "Baseer"
+      },
+      {
+        "command": "baseer.toggleVerbosity",
+        "title": "Toggle Verbosity (terse / normal / verbose)",
+        "category": "Baseer"
+      },
+      {
+        "command": "baseer.toggleLanguage",
+        "title": "Toggle Language (English / Arabic)",
+        "category": "Baseer"
+      },
+      {
+        "command": "baseer.stopSpeaking",
+        "title": "Stop Speaking",
+        "category": "Baseer"
+      },
+      {
+        "command": "baseer.setApiKey",
+        "title": "Set OpenAI API Key",
+        "category": "Baseer"
+      },
+      {
+        "command": "baseer.revokeConsent",
+        "title": "Revoke Consent to Send Code to OpenAI",
+        "category": "Baseer"
+      },
+      {
+        "command": "baseer.purgeSecurityLog",
+        "title": "Purge Security Log",
+        "category": "Baseer"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "baseer.summarizeFile",
+        "key": "ctrl+alt+b f",
+        "mac": "cmd+alt+b f"
+      },
+      {
+        "command": "baseer.describeSymbolAtCursor",
+        "key": "ctrl+alt+b d",
+        "mac": "cmd+alt+b d"
+      },
+      {
+        "command": "baseer.explainSelection",
+        "key": "ctrl+alt+b e",
+        "mac": "cmd+alt+b e"
+      },
+      {
+        "command": "baseer.summarizeLastDiff",
+        "key": "ctrl+alt+b g",
+        "mac": "cmd+alt+b g"
+      },
+      {
+        "command": "baseer.askAboutCode",
+        "key": "ctrl+alt+b a",
+        "mac": "cmd+alt+b a"
+      },
+      {
+        "command": "baseer.toggleVerbosity",
+        "key": "ctrl+alt+b v",
+        "mac": "cmd+alt+b v"
+      },
+      {
+        "command": "baseer.toggleLanguage",
+        "key": "ctrl+alt+b l",
+        "mac": "cmd+alt+b l"
+      },
+      {
+        "command": "baseer.stopSpeaking",
+        "key": "ctrl+alt+shift+s",
+        "mac": "cmd+alt+shift+s"
+      }
+    ],
+    "configuration": {
+      "title": "Baseer",
+      "properties": {
+        "baseer.verbosity": {
+          "type": "string",
+          "enum": [
+            "terse",
+            "normal",
+            "verbose"
+          ],
+          "default": "normal",
+          "description": "How much detail Baseer speaks. Terse is structural ground truth only."
+        },
+        "baseer.language": {
+          "type": "string",
+          "enum": [
+            "en",
+            "ar"
+          ],
+          "default": "en",
+          "description": "Language for Baseer's interface and explanations. Code always stays left-to-right."
+        },
+        "baseer.budget.perSession": {
+          "type": "number",
+          "default": 50,
+          "minimum": 0,
+          "description": "Maximum LLM requests per session."
+        },
+        "baseer.budget.perDay": {
+          "type": "number",
+          "default": 500,
+          "minimum": 0,
+          "description": "Maximum LLM requests per day."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "watch": "node esbuild.config.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "vscode:prepublish": "node scripts/check-publisher.mjs && node esbuild.config.mjs --production"
+  },
+  "dependencies": {
+    "openai": "6.49.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/vscode": "^1.96.0",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^9.17.0",
+    "eslint-plugin-security": "^3.0.1",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.11"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
