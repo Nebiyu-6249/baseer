@@ -3,7 +3,7 @@
 Records which Claude Code skills are active for this project, why, and what
 was searched for but not found. Update this whenever a skill is added.
 
-Last updated: 2026-08-21 (bootstrap).
+Last updated: 2026-08-22 (provider swap Anthropic -> OpenAI).
 
 ## Skill audit performed at bootstrap
 
@@ -21,7 +21,7 @@ project.
 
 | Skill | Relevance to Baseer |
 |---|---|
-| `claude-api` | Anthropic SDK reference: model ids, pricing, streaming, tool use, token counting. **Read this before touching `src/llm/anthropic.ts`** — it supersedes memory on model ids and parameters. |
+| ~~`claude-api`~~ | **No longer applicable.** Baseer swapped to OpenAI on 2026-08-22. This skill covers the Anthropic SDK only; do not consult it for provider facts. |
 | `security-review` | Security review of pending changes on a branch. Use before each PR touching `src/llm/` or `src/security/`. |
 | `code-review` | Correctness + simplification review of a diff. |
 | `init` | Generates a `CLAUDE.md` for the repo. Run after the scaffold exists. |
@@ -44,6 +44,31 @@ flat `.claude/skills/vscode-extension.md`, which would not be picked up).
 These are deliberately written as *decisions and hazards*, not as tutorials.
 They exist so a future session does not re-derive the same findings or, worse,
 write code against an API that does not exist.
+
+## Provider skill gap — OpenAI (opened 2026-08-22)
+
+`SearchSkills` for *openai / openai node sdk / gpt api* returns **zero
+results**. There is no `openai-api` counterpart to the `claude-api` skill, so
+nothing supplies model ids, pricing, or parameter facts for our actual
+provider.
+
+Until one exists, provider facts must be **fetched, never recalled**:
+
+| Need | Verified source | Reachable here? |
+|---|---|---|
+| SDK version, recommended API surface | `raw.githubusercontent.com/openai/openai-node/master/README.md` | **Yes** |
+| Package metadata, `engines`, dependency count | `registry.npmjs.org/openai` | **Yes** |
+| Enumerated model ids | the `openai` tarball's own `resources/shared.d.ts` type union | **Yes** |
+| Pricing, context windows, deprecations | `platform.openai.com/docs/models` | **No — egress blocked** |
+| Data-retention policy (needed for consent copy) | `openai.com` terms | **No — egress blocked** |
+
+The first three are enough to pin a version and choose an API surface. The
+last two are **blocker B1** in `docs/THREAT_MODEL.md` §9 — the first-run
+consent copy cannot be finalised without them.
+
+Recording the gap here rather than writing a thin `openai-api` skill from
+memory: a skill asserting unverified model facts is worse than no skill,
+because a future session would trust it.
 
 ## Gaps not filled by any skill
 
@@ -71,8 +96,20 @@ Outbound HTTPS goes through a policy-enforcing proxy. Verified at bootstrap:
 
 - Reachable: `registry.npmjs.org`, `api.github.com` (scoped to
   `nebiyu-6249/baseer` only), `raw.githubusercontent.com`, web search.
-- **Blocked by org egress policy:** `arxiv.org`, `code.visualstudio.com`.
+- **Blocked by org egress policy:** `arxiv.org`, `code.visualstudio.com`,
+  and (as of the 2026-08-22 recheck) `platform.openai.com` and
+  `api.openai.com`.
 
-Consequence: the three anchor papers could not be read in full — the prior
-art synthesis is built from abstracts and search-surfaced summaries, and is
-marked as such in `docs/PRIOR_ART.md`. See the open question there.
+**Re-checked 2026-08-22** after egress exceptions were requested: all four
+still fail. `arxiv.org` and `code.visualstudio.com` are unchanged; the two
+OpenAI hosts are newly relevant and newly blocking.
+
+Consequences:
+1. The three anchor papers still cannot be read in full — the prior-art
+   synthesis remains abstract-based and is marked as such in
+   `docs/PRIOR_ART.md`.
+2. OpenAI pricing, context windows, and data-retention terms cannot be
+   verified here (blocker B1).
+3. `api.openai.com` being blocked means **no live LLM call can be made from
+   this container**. All LLM work must be unit-tested against a mocked
+   transport; end-to-end verification happens on the developer's machine.

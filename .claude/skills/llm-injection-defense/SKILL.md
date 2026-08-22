@@ -1,6 +1,6 @@
 ---
 name: llm-injection-defense
-description: Prompt-injection defense and LLM security for Baseer. Use when writing src/llm/sanitize.ts, prompts, the Anthropic client, budget enforcement, or the security logger. Maps to OWASP LLM Top 10 2025.
+description: Prompt-injection defense and LLM security for Baseer. Use when writing src/llm/sanitize.ts, prompts, the OpenAI client, budget enforcement, first-run consent, or the security logger. Maps to OWASP LLM Top 10 2025.
 ---
 
 # LLM security for Baseer
@@ -82,18 +82,31 @@ Counters live in `workspaceState`/`globalState`, zod-validated on read
 a status bar item with an accessible label. A cancelled request must
 decrement or never increment.
 
-## Transport
+## Transport — allow-list, not just HTTPS
 
-Assert `https:` in the `LlmClient` constructor and reject any configured
-endpoint that is not HTTPS. Do this in the constructor so a misconfiguration
-fails at startup, not mid-request.
+`LlmClient`'s constructor asserts **both** that the scheme is `https:` **and**
+that the host is exactly `api.openai.com`. Anything else throws. There is no
+user-facing endpoint setting in MVP (THREAT_MODEL v1.0 SIGN-OFF 1), so a
+compromised settings sync cannot redirect traffic. Assert in the constructor
+so a misconfiguration fails at startup, not mid-request.
+
+## Consent gate
+
+No LLM call dispatches before per-workspace consent is stored
+(THREAT_MODEL §2.2). Check this on the dispatch path, above the budget check
+— not in the UI layer, where a new command could bypass it.
 
 ## Logging
 
 Structured JSON to `~/.baseer/security.log`. Log: event type, ISO timestamp,
 hashed session id, outcome, detection category. **Never** log user code,
-secret values, prompt text, or full LLM responses. Cap file size and rotate;
-an unbounded log in the home directory is its own problem.
+secret values, prompt text, or full LLM responses — there must be no
+`code_content` field in the type at all, so it cannot be populated by
+mistake.
+
+Rotation is a hard requirement, enforced **on write, not on read**
+(THREAT_MODEL SIGN-OFF 3): 5 MB cap, rotate to `security.log.1`, delete
+anything beyond `.1`. `baseer.purgeSecurityLog` clears history on demand.
 
 ## OWASP LLM Top 10 2025 mapping
 
