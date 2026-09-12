@@ -178,7 +178,7 @@
     "vscode:prepublish": "node scripts/check-publisher.mjs && node esbuild.config.mjs --production"
   },
   "dependencies": {
-    "openai": "6.49.0"
+    "openai": "7.12.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
