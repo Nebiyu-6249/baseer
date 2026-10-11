@@ -364,11 +364,14 @@ verified facts and a draft paraphrase. **It is not the consent copy.**
 clearly marked `TODO(B1)` that **fails a unit test if shipped unfilled**, so it
 cannot reach a release by accident.
 
-*Flagged by the snapshot for task 5 (not decided here).* The Responses API
-keeps application state for at least 30 days by default unless the request
-sets `store: false`. That storage is in addition to the up-to-30-day
-abuse-monitoring logs. Unless Baseer sends `store: false`, the consent copy
-would understate retention (LLM02). The decision belongs in ADR-0003.
+*Flagged by the snapshot, decided 2026-10-12.* The Responses API keeps
+application state for at least 30 days by default unless the request sets
+`store: false`, on top of the up-to-30-day abuse-monitoring logs. **Decided
+by Nebiyu Gemedu: `store: false` is mandatory.** It is a constant in
+`src/llm/openai.ts`, not a setting, and a unit test asserts it on every
+outbound request (ADR-0003). It mitigates LLM02 by removing a second 30-day
+copy of user code. The abuse-monitoring logs and a 24-hour encrypted prompt
+cache remain, and the consent copy must name both.
 
 **Sign-off:** Approved v1.0 by Nebiyu Gemedu, 2026-08-22, with the four
 amendments recorded in §9. Implementation may proceed, subject to blocker B1
