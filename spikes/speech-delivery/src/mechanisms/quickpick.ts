@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { chunk, type Fixture } from '../fixtures';
-import { logAnnouncement } from '../log';
+import { logAnnouncement, logDismissed } from '../log';
 
 export const NAME = 'B · quickpick';
 
@@ -26,12 +26,23 @@ export async function announce(fixture: Fixture): Promise<void> {
     description: `${i + 1} of ${chunks.length}`,
   }));
 
+  let accepted = false;
+  let closed = false;
   await new Promise<void>((resolve) => {
     qp.onDidHide(() => {
+      // dispose() below fires onDidHide a second time; log the first only, or
+      // the tester sees two DISMISSED lines for one close.
+      if (closed) return;
+      closed = true;
+      // onDidHide also fires when focus moves away, not only on Escape.
+      logDismissed(NAME, accepted ? 'closed with Enter' : 'hidden: Escape or focus moved');
       qp.dispose();
       resolve();
     });
-    qp.onDidAccept(() => qp.hide());
+    qp.onDidAccept(() => {
+      accepted = true;
+      qp.hide();
+    });
     qp.show();
   });
 }

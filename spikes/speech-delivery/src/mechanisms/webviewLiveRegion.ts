@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import type { Fixture } from '../fixtures';
-import { getChannel, logAnnouncement } from '../log';
+import { getChannel, logAnnouncement, logDismissed } from '../log';
 
 export const NAME = 'D · webview live region';
 
@@ -137,6 +137,9 @@ function open(): LivePanel {
       }
     });
     panel.onDidDispose(() => {
+      // The only dismissal the extension can see. Focus stays in the user's
+      // file, so Escape there never reaches the webview.
+      logDismissed(NAME, 'panel closed');
       sub.dispose();
       settle(false);
       live = undefined;
