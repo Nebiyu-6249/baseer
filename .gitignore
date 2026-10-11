@@ -34,3 +34,7 @@ coverage/
 
 # Exception: the ADR-0001 spike vsix is a deliverable to be installed for testing.
 !spikes/speech-delivery/*.vsix
+
+# Verbatim third-party policy text (copyright; kept locally, not redistributed).
+# The committed summary and hashes live in docs/openai-policy-snapshot.md.
+docs/policy-snapshots/
