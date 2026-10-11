@@ -7,6 +7,11 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: development
+    ignore:
+      # Pinned to 6.x — 7.x requires Node 22; revisit when engines.vscode moves
+      # past the VS Code versions still shipping Node 20 extension hosts.
+      - dependency-name: openai
+        versions: ['>=7']
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
