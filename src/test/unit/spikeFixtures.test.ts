@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { FIXTURES, chunk, ltr } from '../../../spikes/speech-delivery/src/fixtures';
+import { FIXTURES, chunk, ltr, splitSentences } from '../../../spikes/speech-delivery/src/fixtures';
 
 const countWords = (s: string): number => s.trim().split(/\s+/).filter(Boolean).length;
 const countSentences = (s: string): number => (s.match(/[.!?]+(?=\s|$)/g) ?? []).length;
+const count = (s: string, ch: string): number => s.split(ch).length - 1;
+/** Every LTR isolate opened in `s` is also closed in `s`. */
+const isolatesBalanced = (s: string): boolean => count(s, '\u2066') === count(s, '\u2069');
+const arabicText = (): string => FIXTURES.find((f) => f.id === 'arabicMedium')?.text ?? '';
 
 describe('ADR-0001 spike fixtures', () => {
   it('has one fixture per required size, plus Arabic', () => {
@@ -62,7 +66,52 @@ describe('ADR-0001 spike fixtures', () => {
     });
   });
 
+  // Regression: the original splitter broke on the "." inside parser.py, so
+  // mechanism C rendered "<LRI>parser." and "py<PDI> ..." on separate lines and
+  // mechanism B's chunk boundaries landed mid-identifier. Either would have
+  // produced a false Arabic RTL failure attributable to the spike, not the
+  // mechanism under test.
+  describe('splitSentences()', () => {
+    it('splits the Arabic fixture into exactly its 3 sentences', () => {
+      expect(splitSentences(arabicText())).toHaveLength(3);
+    });
+
+    it('never splits inside an LTR isolate', () => {
+      for (const f of FIXTURES) {
+        for (const s of splitSentences(f.text)) expect(isolatesBalanced(s)).toBe(true);
+      }
+    });
+
+    it('keeps an isolated identifier containing "." in one piece', () => {
+      const [first] = splitSentences(arabicText());
+      expect(first).toContain(ltr('parser.py'));
+    });
+
+    it('does not end a sentence at a "." followed by a non-space, even un-isolated', () => {
+      expect(splitSentences('Module parser.py loaded. Next one.')).toEqual([
+        'Module parser.py loaded.',
+        'Next one.',
+      ]);
+    });
+
+    it('loses no text for any fixture', () => {
+      for (const f of FIXTURES) {
+        expect(splitSentences(f.text).join(' ')).toBe(f.text.replace(/\s+/g, ' ').trim());
+      }
+    });
+
+    it('agrees with the independent sentence counter for every fixture', () => {
+      for (const f of FIXTURES) expect(splitSentences(f.text)).toHaveLength(f.sentences);
+    });
+  });
+
   describe('chunk()', () => {
+    it('splits the Arabic fixture 2 + 1, with isolates balanced in every chunk', () => {
+      const chunks = chunk(arabicText(), 2);
+      expect(chunks.map(countSentences)).toEqual([2, 1]);
+      for (const c of chunks) expect(isolatesBalanced(c)).toBe(true);
+    });
+
     it('never exceeds the requested sentences per chunk', () => {
       for (const f of FIXTURES) {
         for (const c of chunk(f.text, 2)) expect(countSentences(c)).toBeLessThanOrEqual(2);
