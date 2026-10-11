@@ -89,17 +89,54 @@ export const FIXTURES: readonly Fixture[] = [
   },
 ];
 
+/** U+2066 LRI, U+2067 RLI, U+2068 FSI — each opens an isolate that U+2069 closes. */
+const ISOLATE_OPENERS = new Set(['\u2066', '\u2067', '\u2068']);
+const isTerminator = (c: string): boolean => c === '.' || c === '!' || c === '?';
+const isSpace = (c: string): boolean => /\s/.test(c);
+
+/**
+ * Split prose into trimmed sentences without breaking identifiers.
+ *
+ * A sentence ends at a run of `.`, `!` or `?` that (1) is outside every
+ * directional isolate and (2) is followed by whitespace or the end of the text.
+ * Rule (1) keeps an isolated identifier such as `parser.py` whole — splitting
+ * there would separate U+2066 from its U+2069 and corrupt both the rendering
+ * and the speech of the Arabic fixture. Rule (2) does the same for LTR prose
+ * that names a file without isolating it.
+ */
+export function splitSentences(text: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let start = 0;
+  let i = 0;
+  while (i < text.length) {
+    const c = text.charAt(i);
+    if (ISOLATE_OPENERS.has(c)) depth += 1;
+    else if (c === PDI) depth = Math.max(0, depth - 1);
+    else if (depth === 0 && isTerminator(c)) {
+      let end = i + 1;
+      while (end < text.length && isTerminator(text.charAt(end))) end += 1;
+      if (end === text.length || isSpace(text.charAt(end))) {
+        const sentence = text.slice(start, end).trim();
+        if (sentence) out.push(sentence);
+        start = end;
+      }
+      i = end;
+      continue;
+    }
+    i += 1;
+  }
+  const tail = text.slice(start).trim();
+  if (tail) out.push(tail);
+  return out;
+}
+
 /** Split into speakable chunks of at most `maxSentences` sentences. */
 export function chunk(text: string, maxSentences = 2): string[] {
-  const sentences = text.match(/[^.!?]+[.!?]+\s*/g) ?? [text];
+  const sentences = splitSentences(text);
   const out: string[] = [];
   for (let i = 0; i < sentences.length; i += maxSentences) {
-    out.push(
-      sentences
-        .slice(i, i + maxSentences)
-        .join('')
-        .trim(),
-    );
+    out.push(sentences.slice(i, i + maxSentences).join(' '));
   }
   return out;
 }
