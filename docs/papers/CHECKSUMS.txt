@@ -1,0 +1,22 @@
+# SHA256 of the academic PDFs cited in docs/PRIOR_ART.md.
+#
+# The PDFs themselves are gitignored (copyright; not redistributed). Only this
+# file is committed, so a future session can confirm it is reading the same
+# versions. Page numbers in PRIOR_ART.md refer to these exact files.
+#
+# Verify (from this directory):   sha256sum -c CHECKSUMS.txt
+# Re-fetch a missing file:        curl -L -o <name> https://arxiv.org/pdf/<id+version>
+#
+# Retrieved 2026-10-12 from arxiv.org. Each hash was confirmed identical
+# against the explicitly versioned URL listed below.
+#
+# chen2025      Chen et al., "Screen Reader Programmers in the Vibe Coding Era"
+#               https://arxiv.org/pdf/2506.13270v2  (v2, 11 Dec 2025, 30 pp.)
+# topsen2025    Ehtesham-Ul-Haque & Billah, "ToPSen", DIS '25
+#               https://arxiv.org/pdf/2505.22414v1  (v1, 28 May 2025, 14 pp.)
+# tripathi-thakkar2025  Tripathi & Thakkar, "Accessibility Beyond Accommodations"
+#               https://arxiv.org/pdf/2508.05056v1  (v1, 7 Aug 2025, 14 pp.)
+#
+823cb2b6090d8a496cc590e32b51ffc6c4d84d42c19999d61a7080ef1ff3337d  chen2025-2506.13270.pdf
+2d6170c27e8d05f97f4ee1d419280ebb0a87233b2fc9cc21b2014cad231169af  topsen2025-2505.22414.pdf
+2702eace9fe82e0eae8b81a4769410f6e9d3fc3489d046b214d54648f35efa35  tripathi-thakkar2025-2508.05056.pdf
