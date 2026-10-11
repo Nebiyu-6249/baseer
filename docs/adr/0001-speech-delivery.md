@@ -75,9 +75,15 @@ Each criterion is scored per mechanism × fixture.
 6. **Focus stealing acceptable?** — `yes` / `no` / `n/a`. Where did focus go,
    and did you get it back without effort?
 
-**Hard disqualifiers.** Any mechanism that fails criterion 1 on any fixture,
-or fails criterion 3 on `long`, is out for that content class — no matter how
-well it scores elsewhere.
+**Hard disqualifiers.** A mechanism is out for a content class, no matter how
+well it scores elsewhere, if it:
+
+- fails criterion 1 on any fixture of that class;
+- fails criterion 3 on `long`;
+- fails criterion 5 on `arabic`. Added 2026-10-12 by Nebiyu Gemedu. Without
+  this, a mechanism that speaks Arabic in the wrong order, or mangles the
+  isolated identifiers, would pass the Arabic class merely by speaking at all.
+  For a tool whose headline claim is Arabic support, that is not a pass.
 
 **Invalid presses are re-run, not scored.** If the announcement log marks a
 press `INVALID` (mechanism D's webview never signalled ready), that is a spike

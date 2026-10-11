@@ -5,7 +5,9 @@ four amendments, applied throughout this document (endpoint allow-list,
 no telemetry, log rotation, mandatory first-run consent).
 
 Version 1.0 · approved 2026-08-22 (draft 0.1: 2026-08-21) ·
-Scope: MVP (VS Code extension only, no backend)
+Scope: MVP (VS Code extension only, no backend) ·
+Blocker B1 status updated 2026-10-12. No threats or mitigations changed;
+see §9.
 
 **Provider:** OpenAI (swapped from Anthropic Claude on 2026-08-22; the
 `LlmClient` interface is unchanged and remains provider-agnostic).
@@ -73,7 +75,8 @@ The consent flow:
 - states plainly that **code fragments will be sent to OpenAI**;
 - names OpenAI's applicable data-retention policy, verified against
   OpenAI's own published terms at implementation time — **never
-  paraphrased from memory** (see §9, currently blocked);
+  paraphrased from memory** (see §9 B1; the verified source material is in
+  `docs/openai-policy-snapshot.md`);
 - requires **explicit affirmative input**. Dismissing, pressing Escape, or
   timing out is **not** consent;
 - is stored **per-workspace** — consent for one repository is not consent
@@ -339,20 +342,35 @@ These sign-offs add **three commands** beyond the eight in the MVP spec:
 Eleven total. Each is small and directly required by an approved control, but
 the growth is recorded here rather than absorbed quietly.
 
-### Remaining blocker — consent copy cannot be written yet
+### Blocker B1 — unblocked 2026-10-12 (source material verified; copy still to write)
 
-**B1. OpenAI's data-retention policy is unverifiable from this environment.**
-§2.2 requires the consent copy to name OpenAI's applicable retention policy,
-verified against OpenAI's published terms and never paraphrased from memory.
-`platform.openai.com` and `api.openai.com` are both **blocked by this
-environment's egress policy** (re-checked 2026-08-22, both fail CONNECT).
+**B1. OpenAI's data-retention policy had to be verified before the consent
+copy could name it.** §2.2 requires the consent copy to name OpenAI's
+applicable retention policy, verified against OpenAI's published terms and
+never paraphrased from memory.
 
-Consequence: the consent flow can be built, but its retention sentence must
-be filled from a source the developer supplies, or after an egress exception
-for `platform.openai.com` / `openai.com` is granted. Until then the string
-stays a clearly-marked `TODO(B1)` that **fails a unit test if shipped
-unfilled** — so it cannot reach a release by accident.
+*History.* On 2026-08-22 this could not be done: `platform.openai.com` and
+`api.openai.com` were both blocked by the cloud container's egress policy
+(both failed CONNECT).
+
+*Now.* On 2026-10-12, from the developer's machine, the policy was fetched
+live and recorded in `docs/openai-policy-snapshot.md`, with source URL,
+retrieval time, hashes, and a matching public archive copy. The docs moved:
+`platform.openai.com/docs/guides/your-data` now redirects (301) to
+`developers.openai.com/api/docs/guides/your-data`. The snapshot holds the
+verified facts and a draft paraphrase. **It is not the consent copy.**
+
+*Still in force until task 5 writes the copy.* The retention sentence stays a
+clearly marked `TODO(B1)` that **fails a unit test if shipped unfilled**, so it
+cannot reach a release by accident.
+
+*Flagged by the snapshot for task 5 (not decided here).* The Responses API
+keeps application state for at least 30 days by default unless the request
+sets `store: false`. That storage is in addition to the up-to-30-day
+abuse-monitoring logs. Unless Baseer sends `store: false`, the consent copy
+would understate retention (LLM02). The decision belongs in ADR-0003.
 
 **Sign-off:** Approved v1.0 by Nebiyu Gemedu, 2026-08-22, with the four
 amendments recorded in §9. Implementation may proceed, subject to blocker B1
-for the consent copy only.
+for the consent copy only. *(2026-10-12: B1's source material is verified;
+the consent copy itself remains task 5.)*
