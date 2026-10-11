@@ -48,13 +48,22 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v7
-      # Pinned to the v1.0.0 release commit: a mutable ref must never run with
-      # a secret in its environment. CAVEAT: the action itself runs the Docker
-      # image snyk/snyk:node by mutable tag, which this pin does not freeze.
-      # See issue #19 before adding SNYK_TOKEN.
-      - uses: snyk/actions/node@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
+      # The Snyk CLI image, pinned by DIGEST. This container is the code that
+      # sees SNYK_TOKEN, and a tag (snyk/snyk:node) can be repointed while a
+      # digest cannot. Replaces snyk/actions/node, whose action.yml runs that
+      # image by mutable tag. Same command and env as the action. Dependabot
+      # cannot update a digest inside `run:`; bump by hand per
+      # docs/SECURITY.md ("Bumping the Snyk image digest").
+      - name: snyk test (snyk/snyk:node, digest-pinned)
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: >-
+          docker run --rm
+          -e SNYK_TOKEN -e FORCE_COLOR=2
+          -e SNYK_INTEGRATION_NAME=GITHUB_ACTIONS -e SNYK_INTEGRATION_VERSION=node
+          -v "$PWD:/project" -w /project
+          snyk/snyk:node@sha256:1dd473f4936eaf1e8d2f4068aab09638faaaa8e8085a7ac999aa968c31372a0c
+          snyk test
 
   gitleaks:
     name: gitleaks secret scan
