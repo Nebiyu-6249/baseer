@@ -212,9 +212,9 @@ be told only when their action was needed (p. 16). The paper recommends a
 do-not-disturb mode and on-demand status checks (p. 21). Preferences were
 mixed, though: some participants valued sound cues (p. 16), and many adapted to
 code-completion cues over the two weeks (p. 17). So "user-initiated by
-default" is supported. "Unrequested speech is the top complaint in the
-literature" (the a11y-screenreader skill's wording) is **not** a claim this
-paper makes.
+default" is supported. The a11y-screenreader skill used to say "unrequested
+speech is the top complaint in the literature". That is **not** a claim this
+paper makes, and the skill was softened on 2026-10-12 to match the evidence.
 
 **Newly found and relevant:**
 
@@ -437,7 +437,7 @@ first recruitment channel for task 10.
 
 | Entry | Confirmed | Corrected | Baseer's inference, not the paper's |
 |---|---|---|---|
-| Chen et al. | Study design; three failure modes; ambient-speech harm; two-week shape | (c) rationale for `summarizeLastDiff` moves from §4.2.4 to §4.2.2; "four areas", not three; venue unconfirmed | ≤2-sentence chunking; "unrequested speech is the top complaint" (a11y skill) |
+| Chen et al. | Study design; three failure modes; ambient-speech harm; two-week shape | (c) rationale for `summarizeLastDiff` moves from §4.2.4 to §4.2.2; "four areas", not three; venue unconfirmed | ≤2-sentence chunking; "unrequested speech is the top complaint" (old a11y-skill wording, softened 2026-10-12) |
 | ToPSen | Study design; expert blind participants track structure and position; blindfold critique | "More accurate mental models": comprehension accuracy was comparable (79.65% vs 77.4%). The gap is speed and errors, and expertise matters more than blindness | "No sighted result may stand in for a blind participant's experience" |
 | Tripathi & Thakkar | Accommodation critique; the screen-reader-compatibility requirement | A design proposal with no empirical validation; "no specialised infrastructure" is a goal the authors concede is not met | "No separate Braille code path"; applying a curriculum argument to a software tool |
 
