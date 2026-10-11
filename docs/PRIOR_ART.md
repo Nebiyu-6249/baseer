@@ -1,18 +1,21 @@
 # Prior art synthesis
 
-Compiled 2026-08-21 during bootstrap.
+Compiled 2026-08-21 during bootstrap. Academic entries (§5–7) re-verified
+against full texts 2026-10-12.
 
-> **Sourcing caveat — read this first.** `arxiv.org` and
-> `code.visualstudio.com` are **blocked by this environment's egress
-> policy**. The three academic entries below are built from abstracts,
-> publisher metadata, and search-surfaced summaries — **not** from full
-> texts. The VS Code accessibility guidance comes from the GitHub wiki
-> mirror, not the official docs site. Everything marked *(unverified)* needs
-> confirmation against the full text before it is cited in the ASSETS 2026
-> submission. See "Open questions" at the end.
+> **Sourcing — read this first.** The three academic entries (§5–7) were
+> re-read **in full** on 2026-10-12. The exact arXiv versions and their SHA256
+> are in `docs/papers/CHECKSUMS.txt`, and every page number below refers to
+> those files. Where the full text changed what we had written from the
+> abstracts, the entry says **Correction** in place. Nothing in §5–7 is
+> abstract-only any more.
 >
-> Code repositories *were* read directly (READMEs and `package.json`) via
-> `raw.githubusercontent.com`, so those findings are firsthand.
+> §4 (VS Code accessibility guidance) still rests on the GitHub wiki and a
+> direct read of `vscode.d.ts`. `code.visualstudio.com` is reachable now but
+> was not re-read in this pass.
+>
+> Code repositories (§1–3) were read directly (READMEs and `package.json`) via
+> `raw.githubusercontent.com` at bootstrap, so those findings are firsthand.
 
 ---
 
@@ -155,104 +158,251 @@ questions".
 
 ## 5. Chen et al. — *Screen Reader Programmers in the Vibe Coding Era* (arXiv 2506.13270)
 
-**Read:** abstract and summaries only *(full text blocked)*.
+**Read:** full text, arXiv **v2** (11 Dec 2025, 30 manuscript pages), on
+2026-10-12. **Venue not confirmed:** v2 is an ACM-format manuscript whose
+conference name and DOI are still template placeholders (p. 1), so cite it as
+an arXiv preprint.
 
-Longitudinal study, **16 blind and low-vision programmers**, using GitHub
-Copilot: onboarding tutorial, a programming task, initial feedback, then a
-two-week follow-up on how practice and perception evolved.
+**Study (confirmed).** A two-week, three-phase longitudinal study of 16 screen
+reader programmers using GitHub Copilot in VS Code (pp. 1, 5–8):
 
-**Borrow.** The reported failure modes are a direct requirements list — AI
-assistants helped with efficiency and closed some accessibility gaps, but
-participants struggled to (a) *convey intent* to the model, (b) *interpret AI
-outputs*, and (c) *manage multiple views while maintaining situational
-awareness*. Baseer's answer to each:
-- (a) commands are scoped to a concrete selection or cursor position, so
-  intent is expressed by *where you are*, not by prose;
-- (b) output is chunked into ≤2-sentence interruptible units in a fixed
-  format, not free-form prose;
-- (c) `summarizeLastDiff` exists precisely to restore situational awareness
-  after an AI edit, without the user having to go find what changed.
+1. An initial session: background interview, tailored tutorial, a programming
+   task of about an hour, 7-point Likert ratings, and a semi-structured
+   interview.
+2. Two weeks of self-directed use with a diary (31 cases).
+3. A follow-up of about 30 minutes, completed by 15 of the 16.
 
-**Avoid.** Copilot's inline-suggestion model — ambient, unrequested
-completions that a screen reader user must discover and evaluate mid-flow.
-Baseer's speech is **always user-initiated**. Nothing speaks on a timer or on
-document change.
+13 participants were totally blind and 3 low vision; 14 men, 2 women (p. 6).
+Remote, April–May 2025, IRB-approved (p. 5). Participants were mainly in China
+(p. 21), which matters when generalising to a UAE cohort.
+
+**Failure modes (confirmed, with a refinement).** The abstract names three:
+conveying intent, interpreting AI output, and managing multiple views while
+keeping situational awareness (p. 1). The findings section organises them as
+**four** areas: communicating with the assistant (§4.2.1), reviewing its
+responses (§4.2.2), switching between views (§4.2.3), and system status and
+next steps (§4.2.4) (p. 12). Our earlier "(c)" merged the last two.
+
+**Baseer's answer to each, re-checked against the text:**
+
+- (a) *Intent by location.* Partly supported, but the evidence is narrower than
+  we said. A participant selected lines as context and heard only the file
+  name, so could not tell what the assistant was actually using (p. 12). The
+  finding is about **feedback on what context is in use**, not about selection
+  scoping as such. Task-5 consequence, not a design change: every LLM command
+  should say what it is about to send, not only at `verbose` (compare
+  THREAT_MODEL T6.1).
+- (b) *Chunked, fixed-format output.* Consistent with the paper, but not tested
+  by it. The paper reports long linear responses as hard to navigate
+  (pp. 14, 16), a request for a table of contents (p. 14), and markup leaking
+  into a plain-text view (p. 15). It does not evaluate two-sentence chunking.
+  Keep this as a Baseer design choice; do not cite it as a Chen finding.
+- (c) *`summarizeLastDiff`.* **Correction: the rationale changes, the decision
+  does not.** Chen's situational-awareness problem (§4.2.4, p. 15) is about
+  knowing what the AI is doing and what it is waiting for, which is process
+  status. The support for a spoken diff summary is §4.2.2 instead. Participants
+  could not follow mixed added, removed, and unchanged lines in the diff view,
+  or keep count of which change blocks they had reviewed (p. 13). The paper
+  recommends accessible change tracking covering the scope, location, and
+  content of edits (p. 21). That fits `summarizeLastDiff` far better than (c).
+
+**Avoid ambient speech (confirmed, with nuance).** Several participants found
+automatic playback and repeated status announcements disruptive, and asked to
+be told only when their action was needed (p. 16). The paper recommends a
+do-not-disturb mode and on-demand status checks (p. 21). Preferences were
+mixed, though: some participants valued sound cues (p. 16), and many adapted to
+code-completion cues over the two weeks (p. 17). So "user-initiated by
+default" is supported. "Unrequested speech is the top complaint in the
+literature" (the a11y-screenreader skill's wording) is **not** a claim this
+paper makes.
+
+**Newly found and relevant:**
+
+- *Verifiability.* Participants worried explicitly that the assistant can
+  fabricate. It inserted hallucinated data in place of real terminal output,
+  and a participant suspected it of inventing library functions (p. 14). The
+  paper recommends making AI responses verifiable (p. 21). This is direct
+  empirical support for the LLM09 framing in THREAT_MODEL §5 and for the
+  AST-first design.
+- *Automation versus control.* Over the two weeks participants moved away
+  from the most automated mode toward the one that asks before touching files
+  (pp. 16–17). This supports the MVP's no-file-writes, no-tool-use stance
+  (LLM06).
+- *Status while waiting.* A participant valued a continuous sound during
+  generation, so they could work in parallel (p. 15). For Baseer's
+  network-bound LLM commands, one "working" cue plus a completion announcement
+  is user-initiated, so it fits "no ambient speech". Task-5 consideration.
+- *Plain-text view.* Copilot's accessible view (one plain-text window, focus at
+  the top, back to where you were on close) was praised for its simplicity,
+  though some participants later preferred the structured message list
+  (p. 15). This is prior evidence relevant to ADR-0001 candidate C. It does
+  not replace our own NVDA run.
+- *Customisation.* The paper recommends optional accessibility features users
+  can tune (p. 21). That supports the verbosity levels, and a user-settable
+  delivery mechanism if ADR-0001 needs a second round.
 
 **Design decision supported.** *`summarizeLastDiff` is a core MVP command,
-not a nice-to-have* — it targets the "situational awareness after AI edits"
-gap this study names.
+not a nice-to-have.* Confirmed, through §4.2.2 and the change-tracking
+recommendation (pp. 13, 21) rather than through situational awareness.
 
 **Also supports** the two-week longitudinal shape for the AURAK study
-(step 10): first-session reactions differ from settled practice, so a
-single-session study would miss the real findings.
+(task 10). The authors chose it because most participants were new to these
+tools, so a single session would not show practical use (p. 5), and
+preferences shifted measurably between phases (p. 16). Their compensation
+(USD 70, or USD 55 without the follow-up, plus USD 10 for a subscription;
+p. 6) is a reference point for the protocol.
 
 ---
 
 ## 6. ToPSen (arXiv 2505.22414), DIS '25
 
-**Read:** abstract and summaries only *(full text blocked)*. Published at
-ACM DIS 2025; also on ACM DL (`10.1145/3715336.3735839`).
+**Read:** full text, arXiv **v1** (28 May 2025, 14 pp.), on 2026-10-12. This
+is the DIS '25 paper; the ACM DOI printed on p. 1 (`10.1145/3715336.3735839`)
+resolves to the ACM Digital Library.
 
-12 blind and 12 sighted participants coding non-visually. Key result:
-**expert blind programmers actively maintain structural information as part
-of their mental model** — consciously tracking cursor position, indentation
-level, and output structure — and held more accurate mental models and more
-in working memory than sighted participants coding non-visually.
+**Study (confirmed).** 12 blind and 12 sighted participants, each group 4
+novice and 8 expert Python programmers; 23 men, 1 woman (p. 4). One session of
+60–90 minutes, paid USD 25 an hour (p. 5). Three tasks (p. 4):
 
-**Borrow.** This is the strongest empirical justification for Baseer's core
-premise. It says structure is *already* the unit blind programmers reason
-in, so a tool that narrates AST structure is reinforcing an existing expert
-strategy rather than imposing a new one. It also implies the narrator must
-speak **position and nesting depth**, not just names and counts — those are
-things experts are actively tracking and would otherwise have to maintain
-manually.
+1. Reading: predict the output, and state a statement's level and context
+   hierarchy.
+2. Fixing a syntax error.
+3. Writing code from pseudocode.
 
-**Avoid.** ToPSen's methodological warning applies to our own user study:
-blindfold-style blindness simulation is unsound. Their design instead puts
-sighted programmers under *real* conditions (writing Python on a headless
-server with audio readout only) and reframes the sensory constraint as a
-technical requirement rather than a disability. If the AURAK study includes
-any sighted comparison group, it must use that framing — and no result from
-sighted participants may stand in for a blind participant's experience.
+Participants used a browser-based plain-text editor with text-to-speech,
+modelled on Notepad++ (p. 4).
+
+**Key result (confirmed).** Expert blind programmers actively keep structural
+information in their mental model. They consciously track cursor position,
+indentation level, and output structure (p. 9). On a first pass they read top
+to bottom for a structural overview: line count, declared variables, and block
+types (p. 6).
+
+**Correction: "more accurate mental models."** The abstract says expert blind
+programmers keep more accurate mental models and process more in working
+memory (p. 1). The numbers are more specific than our summary implied:
+
+- On the comprehension task, expert accuracy was **comparable**: 79.65% for
+  blind experts against 77.4% for sighted experts under ToPSen. The sighted
+  experts took about 30% longer (p. 5).
+- In code writing, expert blind participants made fewer errors per block
+  (0.40 against 1.50; Table 2).
+- The paper concludes that **programming expertise, not familiarity with
+  audio, decides comprehension success**. Novices in both groups scored under
+  50% (pp. 5, 7).
+
+Cite the specific metrics, not the general claim.
+
+**Borrow (confirmed and strengthened).**
+
+- The paper asks for tools that convey code structure directly, so users do
+  not have to count indentation one character at a time (p. 7).
+- Its design proposals include a **structural overview** at the top of a file
+  (total lines, maximum nesting level and where it occurs, global variables,
+  data types, statement types) and an explicit **"line N, level M"** cursor tag
+  (pp. 10–11, Fig. 6). These are close precedents for `summarizeFile` and
+  `describeSymbolAtCursor`. Caveat: they are proposed for mixed-ability
+  collaboration and are **not evaluated** in the paper.
+- *Working-memory bounds.* Expert blind participants handled more than 10
+  statements and 4–5 levels in one overview, and two managed 15 statements
+  and 6 levels (p. 6). The discussion puts the comfortable range at about 15
+  statements across 3–5 nesting levels (p. 10). Task-4 consideration: when a
+  summary would list more than about 15 names, speak the counts first and
+  offer the list on demand.
+- For novices, the authors suggest short logic summaries, possibly
+  LLM-generated, as untested future work (p. 10). This is consistent with
+  Baseer's LLM explanations sitting on top of structure, not replacing it.
+
+**Avoid (confirmed).** The paper criticises blindfold simulation for producing
+helplessness instead of capturing lived experience (pp. 2–3). ToPSen instead
+gives sighted participants a technical framing, scripting on a headless server
+with audio only, with no blindfold and the screen off (Fig. 1, p. 1; §1.1,
+p. 2). If the AURAK study includes any sighted comparison group, it must use
+that framing. "No result from sighted participants may stand in for a blind
+participant's experience" is **Baseer's own rule**: consistent with the paper,
+but not stated in it.
+
+**Limitations to carry forward.** The indentation-counting findings are
+specific to Python; languages that mark blocks with brackets may produce
+different strategies (p. 12). That matters for task 6: the JavaScript fixtures
+should not assume the Python results transfer. The study was a single session,
+and the authors call for a longitudinal follow-up themselves (p. 12).
 
 **Design decision supported.** *The narrator speaks structural position
-(nesting depth, enclosing scope), and `verbose` includes line numbers* —
-because that is the information experts are already tracking. Also: *AST
-narration precedes LLM explanation in the build order* (first tasks 3 and 4),
-since structure is the load-bearing part.
+(nesting depth, enclosing scope), and `verbose` includes line numbers.*
+Confirmed (pp. 7, 9–11). The paper treats nesting level as a core part of the
+expert mental model, not a detail, so task 4 should consider speaking it at
+`normal` for `describeSymbolAtCursor`, not only at `verbose`. *AST narration
+precedes LLM explanation in the build order.* Consistent with the paper:
+structure comes first, and LLM summaries appear only as untested help for
+novices.
 
 ---
 
 ## 7. Tripathi & Thakkar — *Accessibility Beyond Accommodations* (arXiv 2508.05056)
 
-**Read:** abstract and metadata only *(full text blocked)*. Also published by
-Springer (`10.1007/978-3-032-14583-3_11`).
+**Read:** full text, arXiv **v1** (7 Aug 2025, 14 pp.), on 2026-10-12. The
+Springer DOI (`10.1007/978-3-032-14583-3_11`) resolves to a chapter with the
+same title and authors, dated 2026; checked against the publisher's citation
+metadata on 2026-10-12. The PDF itself carries no DOI and no affiliation.
 
-A systematic redesign of an introductory CS curriculum for students with
-visual impairments. Central argument: current approaches treat accessibility
-as **individual accommodations bolted onto an existing design** rather than
-as integral to the design itself, and the framework deliberately avoids
-requiring specialised technical infrastructure.
+**What it is. Correction: a design proposal, not an empirical study.** It
+describes a five-component framework for an introductory CS course
+(pp. 8–11):
 
-**Borrow.** The "no specialised infrastructure" constraint is the right test
-for Baseer: it must work with the screen reader the user already owns, in
-the editor they already use, with no extra hardware and no separate Braille
-code path. If a feature needs special equipment, it is an accommodation, not
-a design.
+1. Accessible lecture materials, handed out before class, plus a book of
+   tactile diagrams.
+2. Online tools.
+3. A tactile learning kit.
+4. A dedicated accessibility teaching assistant.
+5. Psychosocial support.
 
-**Avoid.** Framing Baseer as an assistive add-on. A "blind mode" toggled on
-top of a sighted-first tool is the accommodation pattern this paper argues
-against.
+The abstract says the framework was validated through expert consultation
+(p. 1). The discussion describes that validation as ongoing, and says plainly
+that the framework **lacks empirical validation** of learning outcomes
+(pp. 11–12). It must not be cited as evidence that anything works.
+
+**Central argument (confirmed).** Current approaches treat accessibility as
+individual accommodations rather than as part of the design (pp. 1, 3, 5).
+
+**Correction: "no specialised infrastructure."** This is a **requirement** the
+framework sets itself (pp. 1, 6, 8), not something it achieves. The authors
+concede it needs substantial investment in tactile materials, assistive
+technology, and training. It also assumes 3D printing, a dedicated teaching
+assistant, and an office of learning support: a high-resource setting
+(pp. 11–12).
+
+**Borrow (confirmed, and stronger than we recorded).**
+
+- Its technical constraints require every interactive component to work with
+  the major screen readers without custom configuration or special training
+  (p. 7). Its recommended tools are **NVDA on Windows and VS Code** (p. 9).
+  That supports delegating speech to the user's own screen reader inside
+  VS Code more directly than the infrastructure argument we leaned on before.
+- It criticises specialised audio programming environments for being cut off
+  from mainstream practice (p. 5). That supports building inside VS Code
+  rather than as a separate tool, and the "no web IDE in MVP" call.
+- "No separate Braille code path" is **Baseer's inference**. The paper does not
+  discuss Braille output paths in software.
+
+**Avoid (confirmed, by analogy).** The paper argues against retrofitting
+accessibility onto an existing design (p. 7). Applying that to a VS Code
+extension, with no "blind mode" bolted onto a sighted-first tool, is our
+analogy. The paper itself is about curricula.
 
 **Design decision supported.** *Delegate speech to the user's existing screen
-reader by default; in-extension TTS is strictly opt-in.* We integrate with
-the user's established setup rather than introducing a parallel one. This is
-also the cheapest correct choice — and it is the same conclusion the security
-model reaches, since it avoids a second vendor API key.
+reader by default; in-extension TTS is strictly opt-in.* Confirmed through the
+screen-reader-compatibility constraint and the NVDA and VS Code choice
+(pp. 7, 9). It is also the cheapest correct choice, and the security model
+reaches the same conclusion, since it avoids a second vendor API key.
 
-**Relevance beyond the code:** this is the strongest citation for the AURAK
-framing and the RAK Excellence Awards narrative — Baseer as inclusive design,
-not accommodation.
+**Relevance beyond the code.** Still the right citation for the
+inclusive-design framing in the AURAK and RAK Excellence Awards narratives:
+Baseer as inclusive design, not accommodation. Cite it as a position, and pair
+it with Chen et al. and ToPSen for any empirical claim. Its dedicated teaching
+assistant was set up with the institution's office of learning support
+(p. 10), which parallels AURAK's Center for Learning Support Services, the
+first recruitment channel for task 10.
 
 ---
 
@@ -261,22 +411,37 @@ not accommodation.
 1. **The accessibility API gap is the project's biggest technical unknown.**
    Resolve it before writing command implementations — every command's output
    path depends on it.
-2. **Structure-first is empirically grounded** (ToPSen). Build the AST
-   narrator before the LLM layer, as the first-tasks order already has it.
-3. **User-initiated speech only** (Chen et al.). No ambient announcements.
+2. **Structure-first is empirically grounded** (ToPSen pp. 7, 9). Build the
+   AST narrator before the LLM layer, as the first-tasks order already has it.
+3. **User-initiated speech by default** (Chen et al. pp. 16, 21). No ambient
+   announcements. A single status cue while a user-requested LLM call is in
+   flight is consistent with this (p. 15).
 4. **Bundle everything, fetch nothing at runtime** (cursorless + selfint).
-5. **Integrate, don't parallelise** (Tripathi & Thakkar). The user's screen
-   reader is the output device.
+5. **Integrate, don't parallelise** (Tripathi & Thakkar pp. 7, 9). The user's
+   screen reader is the output device.
+6. **Output integrity is a need users state, not only our threat model**
+   (Chen et al. pp. 14, 21). Blind participants said outright that they could
+   not verify what the assistant told them. That grounds the LLM09 framing
+   empirically.
 
-## Open questions — need your input
+## Open questions
 
-1. **Full texts.** `arxiv.org` is blocked here. For the ASSETS submission I
-   should not cite papers I have only read abstracts of. Can you download the
-   three PDFs and drop them in `docs/papers/` (gitignored), or paste the
-   relevant sections? Highest value: ToPSen's design framework section, and
-   Chen et al.'s findings on interpreting AI output.
-2. **Speech delivery mechanism.** Given there is no public announce API, I
-   need to test the candidates (notification / focused QuickPick / focused
-   read-only editor / webview with ARIA live region) against NVDA on your
-   Windows machine. I cannot test this in a headless Linux container. This
-   should become ADR-0001 and it gates the accessibility contract.
+1. ~~**Full texts.**~~ **Resolved 2026-10-12.** All three read in full. See
+   `docs/papers/CHECKSUMS.txt` for the exact versions.
+2. **Speech delivery mechanism.** The ADR-0001 spike was fixed (three bugs
+   that would have produced false results) and is ready for the NVDA run.
+   Results are tracked in GitHub issue #7. This still gates the accessibility
+   contract.
+
+## Verification summary (2026-10-12)
+
+| Entry | Confirmed | Corrected | Baseer's inference, not the paper's |
+|---|---|---|---|
+| Chen et al. | Study design; three failure modes; ambient-speech harm; two-week shape | (c) rationale for `summarizeLastDiff` moves from §4.2.4 to §4.2.2; "four areas", not three; venue unconfirmed | ≤2-sentence chunking; "unrequested speech is the top complaint" (a11y skill) |
+| ToPSen | Study design; expert blind participants track structure and position; blindfold critique | "More accurate mental models": comprehension accuracy was comparable (79.65% vs 77.4%). The gap is speed and errors, and expertise matters more than blindness | "No sighted result may stand in for a blind participant's experience" |
+| Tripathi & Thakkar | Accommodation critique; the screen-reader-compatibility requirement | A design proposal with no empirical validation; "no specialised infrastructure" is a goal the authors concede is not met | "No separate Braille code path"; applying a curriculum argument to a software tool |
+
+**No current Baseer design decision depends on a claim these papers do not
+support.** Every decision still stands. What changed is some rationales, the
+precision of some claims, and new support we had not cited (verifiability,
+automation versus control, structural-overview precedents).
