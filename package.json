@@ -187,7 +187,7 @@
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
     "esbuild": "^0.28.2",
-    "eslint": "^9.17.0",
+    "eslint": "^10.12.0",
     "eslint-plugin-security": "^3.0.1",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
