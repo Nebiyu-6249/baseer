@@ -16,8 +16,10 @@ updates:
       # compile against APIs older supported VS Code versions lack, and vsce
       # refuses to package when @types/vscode exceeds engines.vscode.
       - dependency-name: '@types/vscode'
+      # Same policy, for the floor's Node: VS Code 1.96 runs Node 20.18
+      # (Electron 32). Pinned to the newest @types/node at or below that
+      # (20.17.x; there is no 20.18 line). Raised with engines.vscode only.
       - dependency-name: '@types/node'
-        update-types: ['version-update:semver-major']
       # Pinned to 6.x — 7.x requires Node 22; revisit when engines.vscode moves
       # past the VS Code versions still shipping Node 20 extension hosts.
       - dependency-name: openai
