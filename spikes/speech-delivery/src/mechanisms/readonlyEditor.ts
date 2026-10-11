@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { splitSentences, type Fixture } from '../fixtures';
-import { logAnnouncement } from '../log';
+import { logAnnouncement, logDismissed } from '../log';
 
 export const NAME = 'C · read-only editor';
 
@@ -25,7 +25,20 @@ class SpikeContentProvider implements vscode.TextDocumentContentProvider {
 const provider = new SpikeContentProvider();
 
 export function register(): vscode.Disposable {
-  return vscode.workspace.registerTextDocumentContentProvider(SCHEME, provider);
+  return vscode.Disposable.from(
+    vscode.workspace.registerTextDocumentContentProvider(SCHEME, provider),
+    // A document has no dismiss gesture of its own; closing its tab is the
+    // moment the extension can observe the user is done with it. Note that a
+    // preview tab replaced by the next press also reports as closed — the
+    // logged path says which fixture it was.
+    vscode.window.tabGroups.onDidChangeTabs((e) => {
+      for (const tab of e.closed) {
+        if (tab.input instanceof vscode.TabInputText && tab.input.uri.scheme === SCHEME) {
+          logDismissed(NAME, `tab closed: ${tab.input.uri.path}`);
+        }
+      }
+    }),
+  );
 }
 
 /**
