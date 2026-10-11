@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import type { Fixture } from '../fixtures';
+import { splitSentences, type Fixture } from '../fixtures';
 import { logAnnouncement } from '../log';
 
 export const NAME = 'C · read-only editor';
@@ -42,9 +42,7 @@ export async function announce(fixture: Fixture): Promise<void> {
   logAnnouncement(NAME, fixture.label, fixture.text);
 
   const uri = vscode.Uri.parse(`${SCHEME}:${fixture.id}.txt`);
-  const body = (fixture.text.match(/[^.!?]+[.!?]+\s*/g) ?? [fixture.text])
-    .map((s) => s.trim())
-    .join('\n');
+  const body = splitSentences(fixture.text).join('\n');
   contents.set(uri.toString(), body);
   provider.refresh(uri);
 
