@@ -182,8 +182,8 @@
     "openai": "6.49.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
-    "@types/vscode": "^1.96.0",
+    "@types/node": "20.17.58",
+    "@types/vscode": "1.96.0",
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
     "esbuild": "^0.28.2",
