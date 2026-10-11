@@ -79,6 +79,21 @@ Each criterion is scored per mechanism × fixture.
 or fails criterion 3 on `long`, is out for that content class — no matter how
 well it scores elsewhere.
 
+**Invalid presses are re-run, not scored.** If the announcement log marks a
+press `INVALID` (mechanism D's webview never signalled ready), that is a spike
+fault, not a mechanism result. Close the panel and press again.
+
+### Acceptance rule
+
+Amended 2026-10-12 by Nebiyu Gemedu. Supersedes the stricter wording in the
+task-3 closeout instructions of 2026-10-11 ("if no mechanism meets every hard
+criterion, REJECTED"), which would have rejected a clean per-class mapping.
+
+> **ACCEPTED** when every content class (short / medium / long / Arabic) has at
+> least one mechanism passing all hard criteria. The ADR then records the
+> mapping as the decision. **REJECTED** only when some content class has no
+> passing mechanism; propose a round-two spike (hybrid or user-settable).
+
 ## Test protocol
 
 Install `spikes/speech-delivery/baseer-speech-delivery-spike.vsix` and reload.
