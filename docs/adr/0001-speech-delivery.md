@@ -64,9 +64,26 @@ Each criterion is scored per mechanism × fixture.
 2. **Announced correctly?** — `full` / `truncated` / `garbled` / `reordered`.
    Compare Speech Viewer output against the announcement log. Watch for
    punctuation spoken aloud and identifiers mangled.
-3. **Interruptible?** — `yes` / `no` / `partial`. Does Escape or another
-   keypress stop it mid-utterance? A 120-word blast you cannot stop is a
-   failure regardless of how well it reads.
+3. **Cancellation observable by extension?** Renamed from "Interruptible?" and
+   split in two by Nebiyu Gemedu on 2026-10-12. **Only 3b scores.**
+   - **3a. NVDA Ctrl silenced it?** — `Y` / `N`. Recorded for context, not
+     scored. NVDA's Ctrl silences any mechanism, but tells the extension
+     nothing.
+   - **3b. Extension received a dismissal event?** — `Y` / `N`. There is no
+     partial; a `P` here counts as a fail. After the mechanism's own dismiss
+     gesture, does the announcement log show a `DISMISSED … extension
+     notified` line for that press? The gesture is **Escape** for A, B and D,
+     and **Ctrl+W** for C, because a document is dismissed by closing it.
+
+   *Why.* `baseer.stopSpeaking` must abort the LLM request at its source, not
+   merely silence audio (MVP spec; THREAT_MODEL T6.3). Speech that the
+   extension cannot see being dismissed leaves the request running and the
+   budget burning.
+
+   *Note for scoring.* Baseer's own `baseer.stopSpeaking` keybinding is a
+   command, so the extension observes it under **every** mechanism. 3b
+   measures whether the mechanism's *own* dismissal is observable. Weigh that
+   when writing the decision.
 4. **Chunked?** — `yes` / `no`. Can the user take it at their own pace, or is
    it one continuous utterance?
 5. **Arabic RTL correct?** — `yes` / `no` / `partial`. Is prose right-to-left
@@ -79,7 +96,7 @@ Each criterion is scored per mechanism × fixture.
 well it scores elsewhere, if it:
 
 - fails criterion 1 on any fixture of that class;
-- fails criterion 3 on `long`;
+- fails criterion **3b** on `long` (3a never disqualifies);
 - fails criterion 5 on `arabic`. Added 2026-10-12 by Nebiyu Gemedu. Without
   this, a mechanism that speaks Arabic in the wrong order, or mangles the
   isolated identifiers, would pass the Arabic class merely by speaking at all.
@@ -114,7 +131,11 @@ Install `spikes/speech-delivery/baseer-speech-delivery-spike.vsix` and reload.
    pausing between presses. The presses walk that mechanism through short,
    medium, long, and Arabic. Cycles are per-mechanism.
 5. After each press, record the six criteria.
-6. For criterion 3, deliberately try to interrupt mid-utterance.
+6. For criterion 3, interrupt mid-utterance with the mechanism's dismiss
+   gesture, then check the announcement log for a `DISMISSED` line (3b).
+   Only then press NVDA's Ctrl if it is still speaking (3a). Do any clean-up
+   *after* reading the log, because clean-up itself can produce a `DISMISSED`
+   line that does not count.
 7. `Ctrl+Alt+Shift+0` resets all cycles if you lose your place.
 8. Save the Speech Viewer log and attach it to the tracking issue.
 
@@ -124,43 +145,43 @@ mechanism if interleaved.
 
 ## Decision matrix — TO BE FILLED FROM NVDA RESULTS
 
-Legend: `Y` yes · `N` no · `P` partial · `—` not applicable.
+Legend: `Y` yes · `N` no · `P` partial · `—` not applicable. Column 3b is `Y`/`N` only.
 
 ### A · Notification
 
-| Fixture | 1 Announced | 2 Correct | 3 Interruptible | 4 Chunked | 5 Arabic RTL | 6 Focus OK | Notes |
-|---|---|---|---|---|---|---|---|
-| short (10w) | | | | | — | | |
-| medium (40w) | | | | | — | | |
-| long (120w) | | | | | — | | |
-| arabic (RTL) | | | | | | | |
+| Fixture | 1 Announced | 2 Correct | 3a Ctrl silenced | 3b Ext. notified | 4 Chunked | 5 Arabic RTL | 6 Focus OK | Notes |
+|---|---|---|---|---|---|---|---|---|
+| short (10w) | | | | | | — | | |
+| medium (40w) | | | | | | — | | |
+| long (120w) | | | | | | — | | |
+| arabic (RTL) | | | | | | | | |
 
 ### B · QuickPick
 
-| Fixture | 1 Announced | 2 Correct | 3 Interruptible | 4 Chunked | 5 Arabic RTL | 6 Focus OK | Notes |
-|---|---|---|---|---|---|---|---|
-| short (10w) | | | | | — | | |
-| medium (40w) | | | | | — | | |
-| long (120w) | | | | | — | | |
-| arabic (RTL) | | | | | | | |
+| Fixture | 1 Announced | 2 Correct | 3a Ctrl silenced | 3b Ext. notified | 4 Chunked | 5 Arabic RTL | 6 Focus OK | Notes |
+|---|---|---|---|---|---|---|---|---|
+| short (10w) | | | | | | — | | |
+| medium (40w) | | | | | | — | | |
+| long (120w) | | | | | | — | | |
+| arabic (RTL) | | | | | | | | |
 
 ### C · Read-only editor
 
-| Fixture | 1 Announced | 2 Correct | 3 Interruptible | 4 Chunked | 5 Arabic RTL | 6 Focus OK | Notes |
-|---|---|---|---|---|---|---|---|
-| short (10w) | | | | | — | | |
-| medium (40w) | | | | | — | | |
-| long (120w) | | | | | — | | |
-| arabic (RTL) | | | | | | | |
+| Fixture | 1 Announced | 2 Correct | 3a Ctrl silenced | 3b Ext. notified | 4 Chunked | 5 Arabic RTL | 6 Focus OK | Notes |
+|---|---|---|---|---|---|---|---|---|
+| short (10w) | | | | | | — | | |
+| medium (40w) | | | | | | — | | |
+| long (120w) | | | | | | — | | |
+| arabic (RTL) | | | | | | | | |
 
 ### D · Webview ARIA live region
 
-| Fixture | 1 Announced | 2 Correct | 3 Interruptible | 4 Chunked | 5 Arabic RTL | 6 Focus OK | Notes |
-|---|---|---|---|---|---|---|---|
-| short (10w) | | | | | — | | |
-| medium (40w) | | | | | — | | |
-| long (120w) | | | | | — | | |
-| arabic (RTL) | | | | | | | |
+| Fixture | 1 Announced | 2 Correct | 3a Ctrl silenced | 3b Ext. notified | 4 Chunked | 5 Arabic RTL | 6 Focus OK | Notes |
+|---|---|---|---|---|---|---|---|---|
+| short (10w) | | | | | | — | | |
+| medium (40w) | | | | | | — | | |
+| long (120w) | | | | | | — | | |
+| arabic (RTL) | | | | | | | | |
 
 ### Environment (fill in)
 
