@@ -1,24 +1,42 @@
 import * as vscode from 'vscode';
 import type { Fixture } from '../fixtures';
-import { logAnnouncement } from '../log';
+import { getChannel, logAnnouncement } from '../log';
 
 export const NAME = 'D · webview live region';
 
-let panel: vscode.WebviewPanel | undefined;
+/**
+ * Not a delay before posting — a failure detector. If the webview has not said
+ * it is ready by then, the press is logged as invalid instead of silently
+ * dropping the text, which would read as a false "not announced".
+ */
+const READY_TIMEOUT_MS = 10_000;
+
+interface LivePanel {
+  readonly panel: vscode.WebviewPanel;
+  /** Resolves true when the webview's script is listening; false if it never is. */
+  readonly ready: Promise<boolean>;
+}
+
+let live: LivePanel | undefined;
+
+type FromWebview =
+  { readonly type: 'ready' } | { readonly type: 'rendered'; readonly chars: number };
+
+function parseMessage(msg: unknown): FromWebview | undefined {
+  if (typeof msg !== 'object' || msg === null) return undefined;
+  const m = msg as Record<string, unknown>;
+  if (m['type'] === 'ready') return { type: 'ready' };
+  if (m['type'] === 'rendered' && typeof m['chars'] === 'number') {
+    return { type: 'rendered', chars: m['chars'] };
+  }
+  return undefined;
+}
 
 function nonce(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let out = '';
   for (let i = 0; i < 32; i += 1) out += chars.charAt(Math.floor(Math.random() * chars.length));
   return out;
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
 
 function html(cspSource: string, n: string): string {
@@ -46,15 +64,24 @@ function html(cspSource: string, n: string): string {
   <!-- role=status + aria-live=polite: announce without stealing focus. -->
   <div id="announcement" role="status" aria-live="polite" aria-atomic="true"></div>
 <script nonce="${n}">
+  const host = acquireVsCodeApi();
   const target = document.getElementById('announcement');
   window.addEventListener('message', (event) => {
-    const { text, dir } = event.data;
-    target.setAttribute('dir', dir);
+    const msg = event.data;
+    if (!msg || msg.type !== 'announce') return;
+    target.setAttribute('dir', msg.dir === 'rtl' ? 'rtl' : 'ltr');
     // Clear first: some screen readers ignore a live region whose content is
     // replaced in a single mutation. Two ticks is the usual workaround.
     target.textContent = '';
-    setTimeout(() => { target.textContent = text; }, 60);
+    setTimeout(() => {
+      // textContent never parses HTML, so the raw text is safe here.
+      target.textContent = msg.text;
+      host.postMessage({ type: 'rendered', chars: msg.text.length });
+    }, 60);
   });
+  // Last statement: the listener above is attached, so nothing posted after
+  // this point can be lost.
+  host.postMessage({ type: 'ready' });
 </script>
 </body>
 </html>`;
@@ -72,21 +99,52 @@ function html(cspSource: string, n: string): string {
 export async function announce(fixture: Fixture): Promise<void> {
   logAnnouncement(NAME, fixture.label, fixture.text);
 
-  if (!panel) {
-    panel = vscode.window.createWebviewPanel(
-      'baseerSpikeLiveRegion',
-      'Baseer spike — live region',
-      { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
-      { enableScripts: true, retainContextWhenHidden: true },
+  live ??= open();
+  const { panel, ready } = live;
+  // Every press waits on the same promise, so presses made before the webview
+  // loads are queued and delivered in order rather than dropped.
+  if (!(await ready)) {
+    getChannel().appendLine(
+      `    ${NAME}: webview never signalled ready. This press is INVALID — a spike ` +
+        'problem, not a mechanism result. Close the panel and press again.',
     );
-    panel.onDidDispose(() => {
-      panel = undefined;
-    });
-    const n = nonce();
-    panel.webview.html = html(panel.webview.cspSource, n);
-    // Give the document a moment to parse before the first post.
-    await new Promise((r) => setTimeout(r, 250));
+    return;
   }
+  await panel.webview.postMessage({ type: 'announce', text: fixture.text, dir: fixture.dir });
+}
 
-  await panel.webview.postMessage({ text: escapeHtml(fixture.text), dir: fixture.dir });
+function open(): LivePanel {
+  const panel = vscode.window.createWebviewPanel(
+    'baseerSpikeLiveRegion',
+    'Baseer spike — live region',
+    { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
+    { enableScripts: true, retainContextWhenHidden: true },
+  );
+
+  const ready = new Promise<boolean>((resolve) => {
+    const timer = setTimeout(() => resolve(false), READY_TIMEOUT_MS);
+    const settle = (ok: boolean): void => {
+      clearTimeout(timer);
+      resolve(ok);
+    };
+    const sub = panel.webview.onDidReceiveMessage((raw: unknown) => {
+      const msg = parseMessage(raw);
+      if (msg?.type === 'ready') settle(true);
+      if (msg?.type === 'rendered') {
+        getChannel().appendLine(
+          `[${new Date().toISOString()}] ${NAME} :: live region updated (${msg.chars} characters)`,
+        );
+      }
+    });
+    panel.onDidDispose(() => {
+      sub.dispose();
+      settle(false);
+      live = undefined;
+    });
+  });
+
+  // Set the HTML only after the listener exists, so the ready message cannot
+  // arrive before anyone is listening for it.
+  panel.webview.html = html(panel.webview.cspSource, nonce());
+  return { panel, ready };
 }
