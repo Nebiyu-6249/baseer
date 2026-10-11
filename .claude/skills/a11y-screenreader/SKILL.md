@@ -53,7 +53,11 @@ burns budget is a bug.
 - Never convey state by colour, icon, or badge position alone. Every visual
   signal needs a text equivalent in the accessible name.
 - Never auto-announce on a timer or on document change without the user
-  opting in. Unrequested speech is the top complaint in the literature.
+  opting in. Screen reader programmers report automatic playback and repeated
+  status announcements as disruptive, though preferences vary (Chen et al.
+  2025, pp. 16–17, 21; see `docs/PRIOR_ART.md` §5). So default to
+  user-initiated speech. While a user-requested LLM call runs, one "working"
+  cue plus a completion announcement is fine; a running commentary is not.
 - Never move focus without the user initiating it.
 - Never bypass the OS screen reader with our own audio unless the user has
   explicitly enabled in-extension TTS in settings.

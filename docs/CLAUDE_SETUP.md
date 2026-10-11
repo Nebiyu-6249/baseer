@@ -3,7 +3,10 @@
 Records which Claude Code skills are active for this project, why, and what
 was searched for but not found. Update this whenever a skill is added.
 
-Last updated: 2026-08-22 (provider swap Anthropic -> OpenAI).
+Last updated: 2026-10-12. Sessions moved from the cloud container to the
+developer's Windows machine, and the environment and egress sections were
+refreshed. Before that: 2026-08-22, the provider swap from Anthropic to
+OpenAI.
 
 ## Skill audit performed at bootstrap
 
@@ -54,17 +57,18 @@ provider.
 
 Until one exists, provider facts must be **fetched, never recalled**:
 
-| Need | Verified source | Reachable here? |
+| Need | Verified source | Reachable? (dev machine, 2026-10-12) |
 |---|---|---|
 | SDK version, recommended API surface | `raw.githubusercontent.com/openai/openai-node/master/README.md` | **Yes** |
 | Package metadata, `engines`, dependency count | `registry.npmjs.org/openai` | **Yes** |
 | Enumerated model ids | the `openai` tarball's own `resources/shared.d.ts` type union | **Yes** |
-| Pricing, context windows, deprecations | `platform.openai.com/docs/models` | **No — egress blocked** |
-| Data-retention policy (needed for consent copy) | `openai.com` terms | **No — egress blocked** |
+| Pricing, context windows, deprecations | OpenAI's models docs. The docs now live on `developers.openai.com`; `platform.openai.com/docs/…` paths redirect there (301) | **Yes**; host reachable. The models page itself has not been fetched yet; do that in task 5 |
+| Data-retention policy (needed for consent copy) | `developers.openai.com/api/docs/guides/your-data` (301 from `platform.openai.com/docs/guides/your-data`) | **Yes**. Fetched 2026-10-12 and recorded in `docs/openai-policy-snapshot.md` |
 
 The first three are enough to pin a version and choose an API surface. The
-last two are **blocker B1** in `docs/THREAT_MODEL.md` §9 — the first-run
-consent copy cannot be finalised without them.
+retention policy was the source material for **blocker B1**
+(`docs/THREAT_MODEL.md` §9); it is now verified. Model pricing, context
+windows, and deprecations are fetched at implementation time in task 5.
 
 Recording the gap here rather than writing a thin `openai-api` skill from
 memory: a skill asserting unverified model facts is worse than no skill,
@@ -72,27 +76,66 @@ because a future session would trust it.
 
 ## Gaps not filled by any skill
 
-- **No NVDA/JAWS/VoiceOver automation exists** in this container or in any
-  skill. Screen-reader verification is manual, on the developer's Windows
-  machine. Nothing in CI can substitute for it.
-- **No VS Code binary here** (`code` is not installed and this is a headless
-  Linux container), so `@vscode/test-electron` integration tests cannot run
-  in this session. They can run in GitHub Actions with `xvfb`.
+- **No NVDA/JAWS/VoiceOver automation exists** in this project's tooling or
+  in any skill. Screen-reader verification is manual, on the developer's
+  Windows machine. Nothing in CI can substitute for it.
+- **VS Code is available on the developer's machine** (1.141.0). On
+  2026-10-12 an extension-host test ran locally by launching `Code.exe` with
+  `--extensionDevelopmentPath` and `--extensionTestsPath` and an isolated
+  `--user-data-dir` (the ADR-0001 spike smoke test). So integration tests can
+  run locally without adding `@vscode/test-electron` just to download VS Code.
+  CI still needs `xvfb` on Linux.
 
-## Environment verified at bootstrap
+## Environment — developer's Windows machine (verified 2026-10-12)
+
+| Tool | Found | Notes |
+|---|---|---|
+| OS | Windows 11 Pro 10.0.26200 | |
+| Node | v24.21.0 | |
+| pnpm | 10.33.0 | Matches `packageManager` |
+| npm | 11.19.0 | |
+| git | 2.55.0.windows.3 | `core.autocrlf=true`; `.gitattributes` forces LF. No global identity is set, so Claude's commits pass `-c user.name/-c user.email` per commit |
+| Python | 3.13.12 | Use the `py` launcher; `python` on PATH is the Microsoft Store stub |
+| VS Code | 1.141.0 | Electron 43.7.7. **The extension host runs Node 24.21.0**, measured inside a real extension host. This bears on the `openai` 6.x pin (ADR-0003): the binding constraint is the `engines.vscode` floor, not current VS Code |
+| `gh` | 2.102.0 | Authenticated as `Nebiyu-6249` (`repo`, `workflow` scopes) |
+| `pdftotext` | bundled with Git for Windows | Used to read the anchor PDFs; the Read tool's PDF mode needs poppler, which is not installed |
+| NVDA | being installed by the developer for the ADR-0001 run | Standard install, eSpeak NG Arabic voice. Not verified by Claude at the time of writing |
+
+## Environment verified at bootstrap (historical: cloud container, 2026-08-21)
 
 | Tool | Required | Found | Status |
 |---|---|---|---|
-| Node | >= 20 | v22.22.2 | OK — note the extension host is Node 20; do not use Node 22-only APIs |
+| Node | >= 20 | v22.22.2 | OK. The "extension host is Node 20" note made here was an assumption, superseded by the measurement above |
 | pnpm | any | 10.33.0 | OK |
 | npm | — | 10.9.7 | OK |
 | git | — | 2.43.0 | OK |
 | Python | for grammar fixtures | 3.11.15 | OK |
 | VS Code (`code`) | for manual + integration testing | **not installed** | Expected in a headless container; blocks integration tests here only |
 
-## Network egress (this container)
+## Network egress — developer's machine (2026-10-12)
 
-Outbound HTTPS goes through a policy-enforcing proxy. Verified at bootstrap:
+Unrestricted. One `GET /` per host on 2026-10-12:
+
+| Host | Result |
+|---|---|
+| `platform.openai.com` | Reachable. A plain GET gets a 403 bot wall, and docs paths 301 to `developers.openai.com`, which serves real content |
+| `api.openai.com` | Reachable. 421 on a bare `GET /`, which is expected with no API path |
+| `arxiv.org` | Reachable (200) |
+| `code.visualstudio.com` | Reachable (200) |
+
+Consequences, replacing the three under the historical section below:
+
+1. The three anchor papers have been read in full. `docs/PRIOR_ART.md` §5–7
+   carries page numbers, and `docs/papers/CHECKSUMS.txt` the exact versions.
+2. OpenAI's data-retention terms are verified (`docs/openai-policy-snapshot.md`).
+   Pricing, context windows, and deprecations are fetched in task 5.
+3. Live LLM calls are possible from this machine once a key is stored via
+   `baseer.setApiKey`. Unit tests still mock the transport. A live call is an
+   end-to-end check, not a substitute for tests.
+
+## Network egress — cloud container (historical, 2026-08-21/22)
+
+Outbound HTTPS went through a policy-enforcing proxy. Verified at bootstrap:
 
 - Reachable: `registry.npmjs.org`, `api.github.com` (scoped to
   `nebiyu-6249/baseer` only), `raw.githubusercontent.com`, web search.
