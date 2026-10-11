@@ -16,8 +16,11 @@ dist/
 *.p12
 .baseer/
 
-# Academic PDFs (copyright; fetched locally, not redistributed)
-docs/papers/
+# Academic PDFs (copyright; fetched locally, not redistributed). Ignore the
+# directory's contents, not the directory itself, so the checksum manifest can
+# be re-included — git cannot re-include a file inside an ignored directory.
+docs/papers/*
+!docs/papers/CHECKSUMS.txt
 
 # Editor / OS
 .vscode-test/
@@ -31,3 +34,7 @@ coverage/
 
 # Exception: the ADR-0001 spike vsix is a deliverable to be installed for testing.
 !spikes/speech-delivery/*.vsix
+
+# Verbatim third-party policy text (copyright; kept locally, not redistributed).
+# The committed summary and hashes live in docs/openai-policy-snapshot.md.
+docs/policy-snapshots/
