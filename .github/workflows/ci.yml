@@ -62,3 +62,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_CONFIG: .gitleaks.toml
+
+  hidden-chars:
+    name: hidden-character scan (Trojan Source, blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version: 22 }
+      # Every tracked text file, not just src/. ESLint's bidi rule only sees
+      # JS/TS under src/, which is how a literal U+2066 once reached spikes/.
+      # No install step: the script has no dependencies.
+      - run: node scripts/check-hidden-chars.mjs

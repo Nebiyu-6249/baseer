@@ -175,7 +175,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "vscode:prepublish": "node scripts/check-publisher.mjs && node esbuild.config.mjs --production"
+    "check:hidden-chars": "node scripts/check-hidden-chars.mjs",
+    "vscode:prepublish": "node scripts/check-publisher.mjs && node scripts/check-hidden-chars.mjs && node esbuild.config.mjs --production"
   },
   "dependencies": {
     "openai": "6.49.0"

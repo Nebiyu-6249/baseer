@@ -5,7 +5,7 @@ import security from 'eslint-plugin-security';
 export default [
   { ignores: ['dist/**', 'out/**', 'node_modules/**', 'spikes/**/node_modules/**'] },
   {
-    files: ['src/**/*.ts'],
+    files: ['src/**/*.ts', 'src/**/*.mts'],
     languageOptions: {
       parser: tsParser,
       parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
