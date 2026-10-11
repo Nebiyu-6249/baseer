@@ -72,23 +72,30 @@ sentences, front-loaded, no URLs read aloud. Compare it line by line against
 > When you ask Baseer to explain code, it sends that piece of code to OpenAI
 > over an encrypted connection. OpenAI says it does not use code sent this way
 > to train its models, unless your OpenAI account has opted in to share data.
-> OpenAI may keep what Baseer sends, and what it sends back, in safety logs
-> for up to 30 days. It can keep them longer if the law requires it, or to
-> prevent harm. Baseer cannot switch these logs off. Only organisations that
-> OpenAI has approved can.
+> Baseer always tells OpenAI not to store its answers. Two things remain that
+> Baseer cannot switch off. First, OpenAI may keep what Baseer sends, and what
+> it sends back, in safety logs for up to 30 days, or longer if the law
+> requires it or to prevent harm. Second, OpenAI may hold an encrypted copy of
+> the request in a short-term cache for up to 24 hours. Only organisations
+> that OpenAI has approved can turn the safety logs off.
 
-**Conditional sentence.** Add this only if task 5 implements it, and verify it
-against the code before shipping:
+**Why "not to store its answers" and not "opts out of application-state
+retention".** `store: false` (mandatory since 2026-10-12, ADR-0003) removes
+the Responses API's stored-response copy, which is otherwise kept for **at
+least 30 days** (§5). OpenAI also classifies the prompt-cache tensors (§5) as
+application state, and `store` does not control them. Saying Baseer opts out
+of *all* application-state retention would overstate it.
 
-> Baseer also asks OpenAI not to store its answers beyond those logs.
+**Before shipping (task 5):** confirm the sentence about `store` against the
+code and its unit test, not against this file.
 
-## Implications for task 5 — flagged here, decided there
+## Implications for task 5
 
-1. **`store: false` on every Responses API call.** The Responses API keeps
-   application state for at least 30 days by default (§5). Unless Baseer sends
-   `store: false`, user code sits in a second store beyond the abuse logs, and
-   the paraphrase above becomes incomplete. Record this in ADR-0003 alongside
-   the API-surface choice, and add a unit test asserting it on the request.
+1. **`store: false` on every Responses API call: DECIDED 2026-10-12.** It is
+   mandatory, a constant in `src/llm/openai.ts` rather than a setting, with a
+   unit test asserting every outbound request carries it. The reasoning and
+   consequences are recorded in ADR-0003, including that multi-turn chat must
+   then keep conversation state client-side.
 2. **Do not imply Zero Data Retention.** It requires OpenAI's approval of the
    user's organisation (§4). The consent copy must describe the default 30-day
    logs.
