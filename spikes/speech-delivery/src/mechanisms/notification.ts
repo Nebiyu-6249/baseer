@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import type { Fixture } from '../fixtures';
-import { logAnnouncement } from '../log';
+import { logAnnouncement, logDismissed } from '../log';
 
 export const NAME = 'A · notification';
 
@@ -14,5 +14,9 @@ export const NAME = 'A · notification';
  */
 export async function announce(fixture: Fixture): Promise<void> {
   logAnnouncement(NAME, fixture.label, fixture.text);
+  // Resolves when VS Code considers the notification dismissed. Whether hiding
+  // the toast with Escape counts as dismissed is exactly what criterion 3b
+  // observes, so the spike does not assume either way.
   await vscode.window.showInformationMessage(fixture.text);
+  logDismissed(NAME, 'notification closed');
 }
