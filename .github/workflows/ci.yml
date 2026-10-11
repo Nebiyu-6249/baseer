@@ -48,7 +48,11 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v7
-      - uses: snyk/actions/node@master
+      # Pinned to the v1.0.0 release commit: a mutable ref must never run with
+      # a secret in its environment. CAVEAT: the action itself runs the Docker
+      # image snyk/snyk:node by mutable tag, which this pin does not freeze.
+      # See issue #19 before adding SNYK_TOKEN.
+      - uses: snyk/actions/node@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
