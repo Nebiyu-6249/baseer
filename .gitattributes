@@ -1,0 +1,9 @@
+# LF everywhere, regardless of the contributor's core.autocrlf. Without this a
+# Windows checkout gets CRLF and `pnpm run format:check` fails on every file.
+* text=auto eol=lf
+
+# Never line-ending-convert binaries. The .wasm grammars are checksummed in
+# ADR-0002; any byte change would invalidate the recorded SHA256.
+*.vsix binary
+*.wasm binary
+*.pdf binary
