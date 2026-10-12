@@ -87,11 +87,25 @@ at `v6.0.10`. So `@v6` silently meant "6.0.10", not "latest 6.x". The pin uses
 6.0.10, the commit CI actually ran, so the pin is not also an upgrade. The
 move to 6.1.0 is left to a Dependabot PR with its own CI run.
 
+### The job token is not left on disk
+
+Every `checkout` sets `persist-credentials: false`. By default `checkout`
+writes the job's `GITHUB_TOKEN` into the clone's `.git/config`, where every
+later step in the job could read it, including actions that never asked for
+it. No job pushes or fetches after checkout, so nothing needs it there.
+
+Verified before the change. `gitleaks-action` (at the pinned SHA) never runs
+`git fetch`, `pull` or `clone`. It scans history already in the clone
+(`fetch-depth: 0`) and calls GitHub's API with the `GITHUB_TOKEN` passed in
+its own `env`, not with git credentials.
+
 ### Known gaps (not yet fixed)
 
-- **`checkout` still persists the job token** (`persist-credentials`
-  defaults to `true`), so every later step in a job can read it from
-  `.git/config`. No job pushes, so the fix is `persist-credentials: false` on
-  every `checkout`, once the gitleaks job is verified without it. The blast
-  radius is limited: the workflow grants `GITHUB_TOKEN` only
-  `contents: read`.
+- **The gitleaks binary is downloaded without checksum verification.** The
+  pinned `gitleaks-action` installs gitleaks **8.24.3**, its hard-coded
+  default; CI logs `gitleaks version: 8.24.3`. So the version is effectively
+  pinned. But the action downloads the release asset from GitHub Releases
+  and does not verify a checksum, and release assets can be re-uploaded.
+  Closing this would mean running a checksum-verified gitleaks binary
+  directly instead of the action. Not worth it for a `contents: read` token
+  unless the threat model changes.
