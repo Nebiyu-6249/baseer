@@ -61,6 +61,16 @@ Each criterion is scored per mechanism × fixture.
 
 1. **Announced at all?** — `yes` / `no` / `partial`. Did NVDA speak anything
    without the tester touching anything else?
+
+   **Definition, fixed 2026-10-12 by Nebiyu Gemedu so it cannot drift:**
+   *"Column 1 = spoke its first chunk unprompted, without the user navigating
+   into it. Whether the remaining chunks are reachable is columns 2 and 4."*
+   So `P` (spoke its first chunk or line, then waited) **passes** column 1.
+   The MVP's own rule of at most 2 sentences per chunk means a mechanism that
+   speaks chunk one and waits is complying, not failing. Only `N` (nothing
+   spoken unprompted) fails the hard criterion. Pass 2 showed this matters:
+   C speaks the tab name plus its first line, and B speaks "…, 1 of 4"; both
+   are `P`.
 2. **Announced correctly?** — `full` / `truncated` / `garbled` / `reordered`.
    Compare Speech Viewer output against the announcement log. Watch for
    punctuation spoken aloud and identifiers mangled.
