@@ -68,28 +68,30 @@ CLI; or when the job warns that its CLI is out of date.
 
 ### SHA-pinned actions
 
-Dependabot updates SHA-pinned actions and keeps the trailing `# vX.Y.Z`
-comment in step, so these need no manual procedure. Each SHA below was
-confirmed three ways on 2026-10-12: the latest release tag, the moving major
-tag, and the SHA CI had already been downloading. Pinning therefore changed
-no behaviour.
+**Every `uses:` in `.github/workflows/ci.yml` is pinned to a full commit
+SHA.** Dependabot updates SHA-pinned actions and keeps the trailing
+`# vX.Y.Z` comment in step, so these need no manual procedure. Each pin was
+made behaviour-neutral on 2026-10-12: the SHA is the commit CI was already
+downloading for the moving major tag.
 
 | Action | Pinned to | Why it receives a secret |
 |---|---|---|
-| `actions/checkout` | `3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1` | Its `token` input defaults to the job's `GITHUB_TOKEN`, and `persist-credentials` defaults to `true`, which writes it into the clone's git config |
+| `actions/checkout` | `3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1` | Its `token` input defaults to the job's `GITHUB_TOKEN`. `persist-credentials` defaults to `true`, writing it into the clone's git config |
 | `gitleaks/gitleaks-action` | `e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0` | Given `GITHUB_TOKEN` explicitly in `env` |
+| `actions/setup-node` | `949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0` | Its `token` input defaults to `github.token`, used to download Node builds |
+| `pnpm/action-setup` | `0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10` | None directly; it can read the token `checkout` persisted in `.git/config` |
+
+**A real example of why tags are not pins.** pnpm released `v6.1.0`
+(`ea17c68…`) on 2026-09-05 but never moved its `@v6` tag, which still points
+at `v6.0.10`. So `@v6` silently meant "6.0.10", not "latest 6.x". The pin uses
+6.0.10, the commit CI actually ran, so the pin is not also an upgrade. The
+move to 6.1.0 is left to a Dependabot PR with its own CI run.
 
 ### Known gaps (not yet fixed)
 
-- **`actions/setup-node@v7` receives the token directly.** Its `token` input
-  defaults to `github.token`, used to download Node builds. It is still
-  pinned by major tag.
-- **`pnpm/action-setup@v6` can read the token indirectly.** It has no token
-  input, but it runs after `checkout` in the same job, and `checkout`'s
-  default `persist-credentials: true` leaves the token in `.git/config`. So
-  under the rule above it runs with a secret too. Two possible fixes, not
-  mutually exclusive: SHA-pin both remaining actions, and set
-  `persist-credentials: false` on `checkout` in jobs that never push. That
-  is every job today, but gitleaks must be verified first.
-- The blast radius of all of the above is limited: the workflow grants
-  `GITHUB_TOKEN` only `contents: read`.
+- **`checkout` still persists the job token** (`persist-credentials`
+  defaults to `true`), so every later step in a job can read it from
+  `.git/config`. No job pushes, so the fix is `persist-credentials: false` on
+  every `checkout`, once the gitleaks job is verified without it. The blast
+  radius is limited: the workflow grants `GITHUB_TOKEN` only
+  `contents: read`.
