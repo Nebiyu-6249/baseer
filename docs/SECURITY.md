@@ -66,12 +66,30 @@ CLI; or when the job warns that its CLI is out of date.
 |---|---|---|---|
 | 2026-10-12 | `sha256:1dd473f4936eaf1e8d2f4068aab09638faaaa8e8085a7ac999aa968c31372a0c` | 2026-10-11T00:06:25Z | Initial pin, replacing `snyk/actions/node` |
 
+### SHA-pinned actions
+
+Dependabot updates SHA-pinned actions and keeps the trailing `# vX.Y.Z`
+comment in step, so these need no manual procedure. Each SHA below was
+confirmed three ways on 2026-10-12: the latest release tag, the moving major
+tag, and the SHA CI had already been downloading. Pinning therefore changed
+no behaviour.
+
+| Action | Pinned to | Why it receives a secret |
+|---|---|---|
+| `actions/checkout` | `3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1` | Its `token` input defaults to the job's `GITHUB_TOKEN`, and `persist-credentials` defaults to `true`, which writes it into the clone's git config |
+| `gitleaks/gitleaks-action` | `e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0` | Given `GITHUB_TOKEN` explicitly in `env` |
+
 ### Known gaps (not yet fixed)
 
-- **The other actions are pinned by major tag**: `actions/checkout@v7`,
-  `actions/setup-node@v7`, `pnpm/action-setup@v6`,
-  `gitleaks/gitleaks-action@v3`. Under the rule above, `gitleaks-action`
-  (given `GITHUB_TOKEN` explicitly) and `checkout` (uses the job token by
-  default) should be SHA-pinned too. The blast radius is limited, because the
-  workflow grants only `contents: read`. The cost is low: Dependabot keeps
-  SHA-pinned actions current and maintains the `# vX.Y.Z` comment.
+- **`actions/setup-node@v7` receives the token directly.** Its `token` input
+  defaults to `github.token`, used to download Node builds. It is still
+  pinned by major tag.
+- **`pnpm/action-setup@v6` can read the token indirectly.** It has no token
+  input, but it runs after `checkout` in the same job, and `checkout`'s
+  default `persist-credentials: true` leaves the token in `.git/config`. So
+  under the rule above it runs with a secret too. Two possible fixes, not
+  mutually exclusive: SHA-pin both remaining actions, and set
+  `persist-credentials: false` on `checkout` in jobs that never push. That
+  is every job today, but gitleaks must be verified first.
+- The blast radius of all of the above is limited: the workflow grants
+  `GITHUB_TOKEN` only `contents: read`.
