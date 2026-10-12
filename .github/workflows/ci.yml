@@ -15,7 +15,7 @@ jobs:
     name: lint · typecheck · test · build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # No `version:` here — the action reads package.json "packageManager".
       # Specifying both makes the action error before install.
       - uses: pnpm/action-setup@v6
@@ -34,7 +34,7 @@ jobs:
     name: dependency audit (blocking)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # The Snyk CLI image, pinned by DIGEST. This container is the code that
       # sees SNYK_TOKEN, and a tag (snyk/snyk:node) can be repointed while a
       # digest cannot. Replaces snyk/actions/node, whose action.yml runs that
@@ -69,9 +69,9 @@ jobs:
     name: gitleaks secret scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { fetch-depth: 0 }
-      - uses: gitleaks/gitleaks-action@v3
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_CONFIG: .gitleaks.toml
@@ -80,7 +80,7 @@ jobs:
     name: hidden-character scan (Trojan Source, blocking)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
       # Every tracked text file, not just src/. ESLint's bidi rule only sees
